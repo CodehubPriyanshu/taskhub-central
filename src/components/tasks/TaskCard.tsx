@@ -1,4 +1,4 @@
-import { Calendar, MessageSquare, User } from 'lucide-react';
+import { Calendar, MessageSquare, CheckCircle, XCircle, Clock, AlertTriangle } from 'lucide-react';
 import { Task, User as UserType } from '@/types';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -24,23 +24,40 @@ const TaskCard = ({ task, assignedUser, onClick }: TaskCardProps) => {
     completed: { label: 'Completed', className: 'bg-success/10 text-success' },
   };
 
+  const acceptanceConfig = {
+    pending: { icon: Clock, className: 'text-muted-foreground', label: 'Awaiting Response' },
+    accepted: { icon: CheckCircle, className: 'text-success', label: 'Accepted' },
+    rejected: { icon: XCircle, className: 'text-destructive', label: 'Rejected' },
+    extension_requested: { icon: AlertTriangle, className: 'text-warning', label: 'Extension Requested' },
+  };
+
   const priority = priorityConfig[task.priority];
   const status = statusConfig[task.status];
+  const acceptance = acceptanceConfig[task.acceptanceStatus];
   const deadline = new Date(task.deadline);
   const isOverdue = isPast(deadline) && task.status !== 'completed';
   const isDueToday = isToday(deadline);
+  const AcceptanceIcon = acceptance.icon;
 
   return (
     <Card 
       className={cn(
         "cursor-pointer transition-all hover:shadow-md hover:border-primary/50",
-        isOverdue && "border-destructive/50"
+        isOverdue && "border-destructive/50",
+        task.acceptanceStatus === 'rejected' && "border-destructive/30 bg-destructive/5",
+        task.acceptanceStatus === 'extension_requested' && "border-warning/30 bg-warning/5"
       )}
       onClick={onClick}
     >
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between gap-2">
-          <h3 className="font-semibold text-sm line-clamp-2">{task.title}</h3>
+          <div className="space-y-1 flex-1">
+            <div className="flex items-center gap-1.5">
+              <AcceptanceIcon className={cn('h-3.5 w-3.5', acceptance.className)} />
+              <span className={cn('text-xs', acceptance.className)}>{acceptance.label}</span>
+            </div>
+            <h3 className="font-semibold text-sm line-clamp-2">{task.title}</h3>
+          </div>
           <Badge variant="outline" className={cn('shrink-0 text-xs', priority.className)}>
             {priority.label}
           </Badge>
@@ -48,6 +65,18 @@ const TaskCard = ({ task, assignedUser, onClick }: TaskCardProps) => {
       </CardHeader>
       <CardContent className="pt-0 space-y-3">
         <p className="text-sm text-muted-foreground line-clamp-2">{task.description}</p>
+        
+        {task.rejectionReason && (
+          <p className="text-xs text-destructive bg-destructive/10 p-2 rounded">
+            Rejection: {task.rejectionReason}
+          </p>
+        )}
+
+        {task.acceptanceStatus === 'extension_requested' && task.extensionReason && (
+          <p className="text-xs text-warning bg-warning/10 p-2 rounded">
+            Extension: {task.extensionReason}
+          </p>
+        )}
         
         <div className="flex items-center justify-between">
           <Badge variant="secondary" className={cn('text-xs', status.className)}>
