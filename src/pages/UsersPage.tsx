@@ -390,14 +390,14 @@ const UsersPage = () => {
             <div className="space-y-2">
               <Label htmlFor="team">Team</Label>
               <Select
-                value={formData.teamId}
-                onValueChange={(value) => setFormData({ ...formData, teamId: value })}
+                value={formData.teamId || "none"}
+                onValueChange={(value) => setFormData({ ...formData, teamId: value === "none" ? "" : value })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select team" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No Team</SelectItem>
+                  <SelectItem value="none">No Team</SelectItem>
                   {teams.map((team) => (
                     <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>
                   ))}
