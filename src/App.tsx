@@ -11,6 +11,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Tasks from "./pages/Tasks";
 import UsersPage from "./pages/UsersPage";
+import TeamUsersPage from "./pages/TeamUsersPage";
 import TeamsPage from "./pages/TeamsPage";
 import DepartmentsPage from "./pages/DepartmentsPage";
 import NotFound from "./pages/NotFound";
@@ -35,6 +36,7 @@ const App = () => (
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/tasks" element={<Tasks />} />
                 <Route path="/users" element={<UsersPage />} />
+                <Route path="/team-users" element={<TeamUsersPage />} />
                 <Route path="/teams" element={<TeamsPage />} />
                 <Route path="/departments" element={<DepartmentsPage />} />
               </Route>

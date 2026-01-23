@@ -5,7 +5,7 @@ import {
   Users, 
   Building2, 
   UsersRound, 
-  Settings,
+  UserCircle,
   LogOut,
   ChevronLeft,
   ChevronRight
@@ -41,6 +41,12 @@ const Sidebar = () => {
       icon: Users, 
       path: '/users',
       show: isAdmin 
+    },
+    { 
+      label: 'Team Members', 
+      icon: UserCircle, 
+      path: '/team-users',
+      show: isTeamLeader
     },
     { 
       label: 'Teams', 
