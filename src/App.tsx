@@ -14,6 +14,7 @@ import UsersPage from "./pages/UsersPage";
 import TeamUsersPage from "./pages/TeamUsersPage";
 import TeamsPage from "./pages/TeamsPage";
 import DepartmentsPage from "./pages/DepartmentsPage";
+import ProfilePage from "./pages/profile/ProfilePage";
 import NotFound from "./pages/NotFound";
 
 // Initialize mock data
@@ -39,6 +40,7 @@ const App = () => (
                 <Route path="/team-users" element={<TeamUsersPage />} />
                 <Route path="/teams" element={<TeamsPage />} />
                 <Route path="/departments" element={<DepartmentsPage />} />
+                <Route path="/profile" element={<ProfilePage />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>

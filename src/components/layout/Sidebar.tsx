@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   CheckSquare, 
@@ -8,7 +8,8 @@ import {
   UserCircle,
   LogOut,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Settings
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthContext } from '@/contexts/AuthContext';
@@ -18,6 +19,7 @@ import { useState } from 'react';
 const Sidebar = () => {
   const { user, logout } = useAuthContext();
   const location = useLocation();
+  const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
 
   const isAdmin = user?.role === 'admin';
@@ -61,6 +63,24 @@ const Sidebar = () => {
       show: isAdmin 
     },
   ];
+
+  const handleProfileClick = () => {
+    navigate('/profile');
+  };
+
+  const getRoleBadgeText = () => {
+    if (!user?.role) return '';
+    switch (user.role) {
+      case 'admin':
+        return 'Administrator';
+      case 'team_leader':
+        return 'Team Leader';
+      case 'user':
+        return 'User';
+      default:
+        return String(user.role).replace('_', ' ');
+    }
+  };
 
   return (
     <aside 
@@ -111,21 +131,30 @@ const Sidebar = () => {
         })}
       </nav>
 
-      {/* User Section */}
+      {/* User Section - Clickable Profile */}
       <div className="p-3 border-t border-sidebar-border">
-        {!collapsed && (
-          <div className="flex items-center gap-3 px-3 py-2 mb-2">
-            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-              <span className="text-sm font-medium text-primary">
-                {user?.name?.charAt(0).toUpperCase()}
-              </span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-sidebar-foreground truncate">{user?.name}</p>
-              <p className="text-xs text-muted-foreground capitalize">{user?.role?.replace('_', ' ')}</p>
-            </div>
+        <button
+          onClick={handleProfileClick}
+          className={cn(
+            "w-full flex items-center gap-3 px-3 py-2 mb-2 rounded-lg transition-colors",
+            location.pathname === '/profile' 
+              ? "bg-sidebar-primary text-sidebar-primary-foreground" 
+              : "hover:bg-sidebar-accent"
+          )}
+        >
+          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+            <span className="text-sm font-medium text-primary">
+              {user?.name?.charAt(0).toUpperCase()}
+            </span>
           </div>
-        )}
+          {!collapsed && (
+            <div className="flex-1 min-w-0 text-left">
+              <p className="text-sm font-medium text-sidebar-foreground truncate">{user?.name}</p>
+              <p className="text-xs text-muted-foreground">{getRoleBadgeText()}</p>
+            </div>
+          )}
+          {!collapsed && <Settings className="h-4 w-4 text-muted-foreground" />}
+        </button>
         <Button 
           variant="ghost" 
           className={cn(
