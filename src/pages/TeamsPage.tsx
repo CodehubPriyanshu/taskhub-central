@@ -255,14 +255,14 @@ const TeamsPage = () => {
               <div className="space-y-2">
                 <Label htmlFor="leader">Team Leader</Label>
                 <Select
-                  value={formData.leaderId}
-                  onValueChange={(value) => setFormData({ ...formData, leaderId: value })}
+                  value={formData.leaderId || "none"}
+                  onValueChange={(value) => setFormData({ ...formData, leaderId: value === "none" ? "" : value })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select team leader" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No Leader</SelectItem>
+                    <SelectItem value="none">No Leader</SelectItem>
                     {teamLeaders.map((leader) => (
                       <SelectItem key={leader.id} value={leader.id}>{leader.name}</SelectItem>
                     ))}
