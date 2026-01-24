@@ -33,7 +33,7 @@ const TaskCard = ({ task, assignedUser, onClick }: TaskCardProps) => {
 
   const priority = priorityConfig[task.priority];
   const status = statusConfig[task.status];
-  const acceptance = acceptanceConfig[task.acceptanceStatus];
+  const acceptance = acceptanceConfig[task.acceptanceStatus] || acceptanceConfig.pending; // Fallback to pending if invalid status
   const deadline = new Date(task.deadline);
   const isOverdue = isPast(deadline) && task.status !== 'completed';
   const isDueToday = isToday(deadline);

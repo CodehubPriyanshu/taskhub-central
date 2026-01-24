@@ -1,7 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useSupabaseAuthContext } from '@/contexts/SupabaseAuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { useAuthContext } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -14,7 +13,6 @@ import {
   File, Trash2, Download, Loader2, Send, Eye, CheckCircle
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { Database } from '@/integrations/supabase/types';
 import {
   Dialog,
   DialogContent,
@@ -22,10 +20,46 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 
-type Task = Database['public']['Tables']['tasks']['Row'];
-type TaskSubmission = Database['public']['Tables']['task_submissions']['Row'];
-type SubmissionFile = Database['public']['Tables']['submission_files']['Row'];
-type TaskStatus = Database['public']['Enums']['task_status'];
+type Task = {
+  id: string;
+  title: string;
+  description?: string | null;
+  assigned_to: string;
+  created_by: string;
+  due_date: string;
+  start_date?: string | null;
+  status: 'pending' | 'in_progress' | 'submitted' | 'reviewed';
+  team_id?: string | null;
+  priority?: string | null;
+  created_at: string;
+  updated_at: string;
+  allows_file_upload?: boolean | null;
+  allows_text_submission?: boolean | null;
+  max_files?: number | null;
+};
+
+type TaskSubmission = {
+  id: string;
+  task_id: string;
+  user_id: string;
+  text_content?: string | null;
+  status: 'draft' | 'submitted' | 'reviewed';
+  submitted_at?: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+type SubmissionFile = {
+  id: string;
+  submission_id: string;
+  file_name: string;
+  file_path: string;
+  file_type: string;
+  file_size: number;
+  uploaded_at: string;
+};
+
+type TaskStatus = 'pending' | 'in_progress' | 'submitted' | 'reviewed';
 
 const ALLOWED_FILE_TYPES = {
   'video/mp4': 'Video',
@@ -47,7 +81,7 @@ const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 const TaskSubmission = () => {
   const { taskId } = useParams<{ taskId: string }>();
   const navigate = useNavigate();
-  const { user } = useSupabaseAuthContext();
+  const { user } = useAuthContext();
   const { toast } = useToast();
 
   const [task, setTask] = useState<Task | null>(null);
@@ -62,19 +96,28 @@ const TaskSubmission = () => {
 
   const fetchData = useCallback(async () => {
     if (!taskId || !user) return;
+    
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      console.error('No auth token found');
+      navigate('/login');
+      return;
+    }
 
     // Fetch task
-    const { data: taskData, error: taskError } = await supabase
-      .from('tasks')
-      .select('*')
-      .eq('id', taskId)
-      .single();
+    const taskResponse = await fetch(`http://localhost:5000/api/tasks/${taskId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
 
-    if (taskError || !taskData) {
+    if (!taskResponse.ok) {
       toast({ title: 'Task not found', variant: 'destructive' });
       navigate('/user/dashboard');
       return;
     }
+    
+    const taskData = await taskResponse.json();
 
     // Check if task is assigned to current user
     if (taskData.assigned_to !== user.id) {
@@ -86,25 +129,30 @@ const TaskSubmission = () => {
     setTask(taskData);
 
     // Fetch existing submission
-    const { data: subData } = await supabase
-      .from('task_submissions')
-      .select('*')
-      .eq('task_id', taskId)
-      .eq('user_id', user.id)
-      .single();
+    const subResponse = await fetch(`http://localhost:5000/api/submissions?task_id=${taskId}&user_id=${user.id}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    if (subResponse.ok) {
+      const subDataArray = await subResponse.json();
+      if (subDataArray.length > 0) {
+        const subData = subDataArray[0];
+        setSubmission(subData);
+        setTextContent(subData.text_content || '');
 
-    if (subData) {
-      setSubmission(subData);
-      setTextContent(subData.text_content || '');
-
-      // Fetch files for this submission
-      const { data: filesData } = await supabase
-        .from('submission_files')
-        .select('*')
-        .eq('submission_id', subData.id);
-
-      if (filesData) {
-        setFiles(filesData);
+        // Fetch files for this submission
+        const filesResponse = await fetch(`http://localhost:5000/api/submission-files?submission_id=${subData.id}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (filesResponse.ok) {
+          const filesData = await filesResponse.json();
+          setFiles(filesData);
+        }
       }
     }
 
@@ -117,24 +165,52 @@ const TaskSubmission = () => {
 
   const getOrCreateSubmission = async (): Promise<string | null> => {
     if (submission) return submission.id;
-
-    const { data, error } = await supabase
-      .from('task_submissions')
-      .insert({
-        task_id: taskId!,
-        user_id: user!.id,
-        status: 'draft',
-      })
-      .select()
-      .single();
-
-    if (error) {
-      toast({ title: 'Failed to create submission', description: error.message, variant: 'destructive' });
+    
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      toast({ 
+        title: 'Authentication error', 
+        description: 'Please log in again',
+        variant: 'destructive' 
+      });
       return null;
     }
-
-    setSubmission(data);
-    return data.id;
+    
+    try {
+      const response = await fetch('http://localhost:5000/api/submissions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          task_id: taskId!,
+          user_id: user!.id,
+          status: 'draft',
+        })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setSubmission(data);
+        return data.id;
+      } else {
+        const errorData = await response.json();
+        toast({ 
+          title: 'Failed to create submission', 
+          description: errorData.message || 'Failed to create submission',
+          variant: 'destructive' 
+        });
+        return null;
+      }
+    } catch (error) {
+      toast({ 
+        title: 'Failed to create submission', 
+        description: 'Network error occurred',
+        variant: 'destructive' 
+      });
+      return null;
+    }
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -180,38 +256,49 @@ const TaskSubmission = () => {
         continue;
       }
 
-      // Upload to storage
-      const filePath = `${user.id}/${submissionId}/${Date.now()}-${file.name}`;
-      const { error: uploadError } = await supabase.storage
-        .from('task-submissions')
-        .upload(filePath, file);
-
-      if (uploadError) {
+      // Create FormData for file upload
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('submission_id', submissionId);
+      
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
         toast({ 
-          title: 'Upload failed', 
-          description: uploadError.message,
+          title: 'Authentication error', 
+          description: 'Please log in again',
           variant: 'destructive' 
         });
         continue;
       }
-
-      // Save file metadata
-      const { data: fileData, error: fileError } = await supabase
-        .from('submission_files')
-        .insert({
-          submission_id: submissionId,
-          file_name: file.name,
-          file_path: filePath,
-          file_type: file.type,
-          file_size: file.size,
-          uploaded_by: user.id,
-        })
-        .select()
-        .single();
-
-      if (!fileError && fileData) {
-        setFiles(prev => [...prev, fileData]);
-        toast({ title: 'File uploaded', description: file.name });
+      
+      try {
+        const response = await fetch('http://localhost:5000/api/submission-files', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+            // Note: Don't set Content-Type header when using FormData
+          },
+          body: formData
+        });
+        
+        if (response.ok) {
+          const fileData = await response.json();
+          setFiles(prev => [...prev, fileData]);
+          toast({ title: 'File uploaded', description: file.name });
+        } else {
+          const errorData = await response.json();
+          toast({ 
+            title: 'Upload failed', 
+            description: errorData.message || 'Failed to upload file',
+            variant: 'destructive' 
+          });
+        }
+      } catch (error) {
+        toast({ 
+          title: 'Upload failed', 
+          description: 'Network error occurred',
+          variant: 'destructive' 
+        });
       }
     }
 
@@ -220,14 +307,42 @@ const TaskSubmission = () => {
   };
 
   const handleDeleteFile = async (fileId: string, filePath: string) => {
-    // Delete from storage
-    await supabase.storage.from('task-submissions').remove([filePath]);
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      toast({ 
+        title: 'Authentication error', 
+        description: 'Please log in again',
+        variant: 'destructive' 
+      });
+      return;
+    }
     
-    // Delete metadata
-    await supabase.from('submission_files').delete().eq('id', fileId);
-    
-    setFiles(prev => prev.filter(f => f.id !== fileId));
-    toast({ title: 'File deleted' });
+    try {
+      const response = await fetch(`http://localhost:5000/api/submission-files/${fileId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        setFiles(prev => prev.filter(f => f.id !== fileId));
+        toast({ title: 'File deleted' });
+      } else {
+        const errorData = await response.json();
+        toast({ 
+          title: 'Delete failed', 
+          description: errorData.message || 'Failed to delete file',
+          variant: 'destructive' 
+        });
+      }
+    } catch (error) {
+      toast({ 
+        title: 'Delete failed', 
+        description: 'Network error occurred',
+        variant: 'destructive' 
+      });
+    }
   };
 
   const handleSaveText = async () => {
@@ -235,14 +350,43 @@ const TaskSubmission = () => {
       const submissionId = await getOrCreateSubmission();
       if (!submissionId) return;
     }
-
-    const { error } = await supabase
-      .from('task_submissions')
-      .update({ text_content: textContent })
-      .eq('id', submission?.id);
-
-    if (!error) {
-      toast({ title: 'Text saved' });
+    
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      toast({ 
+        title: 'Authentication error', 
+        description: 'Please log in again',
+        variant: 'destructive' 
+      });
+      return;
+    }
+    
+    try {
+      const response = await fetch(`http://localhost:5000/api/submissions/${submission?.id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ text_content: textContent })
+      });
+      
+      if (response.ok) {
+        toast({ title: 'Text saved' });
+      } else {
+        const errorData = await response.json();
+        toast({ 
+          title: 'Save failed', 
+          description: errorData.message || 'Failed to save text',
+          variant: 'destructive' 
+        });
+      }
+    } catch (error) {
+      toast({ 
+        title: 'Save failed', 
+        description: 'Network error occurred',
+        variant: 'destructive' 
+      });
     }
   };
 
@@ -263,56 +407,149 @@ const TaskSubmission = () => {
       setIsSubmitting(false);
       return;
     }
+    
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      toast({ 
+        title: 'Authentication error', 
+        description: 'Please log in again',
+        variant: 'destructive' 
+      });
+      setIsSubmitting(false);
+      return;
+    }
+    
+    try {
+      // Update submission status
+      const subResponse = await fetch(`http://localhost:5000/api/submissions/${submissionId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+          status: 'submitted', 
+          text_content: textContent,
+          submitted_at: new Date().toISOString(),
+        })
+      });
+      
+      // Update task status
+      const taskResponse = await fetch(`http://localhost:5000/api/tasks/${taskId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status: 'submitted' })
+      });
 
-    // Update submission status
-    const { error: subError } = await supabase
-      .from('task_submissions')
-      .update({ 
-        status: 'submitted', 
-        text_content: textContent,
-        submitted_at: new Date().toISOString(),
-      })
-      .eq('id', submissionId);
-
-    // Update task status
-    const { error: taskError } = await supabase
-      .from('tasks')
-      .update({ status: 'submitted' })
-      .eq('id', taskId);
-
-    if (subError || taskError) {
-      toast({ title: 'Submission failed', variant: 'destructive' });
-    } else {
-      toast({ title: 'Task submitted successfully!' });
-      navigate('/user/dashboard');
+      if (subResponse.ok && taskResponse.ok) {
+        toast({ title: 'Task submitted successfully!' });
+        navigate('/user/dashboard');
+      } else {
+        const subError = await subResponse.json();
+        const taskError = await taskResponse.json();
+        
+        toast({ 
+          title: 'Submission failed', 
+          description: subError.message || taskError.message || 'Failed to submit task',
+          variant: 'destructive' 
+        });
+      }
+    } catch (error) {
+      toast({ 
+        title: 'Submission failed', 
+        description: 'Network error occurred',
+        variant: 'destructive' 
+      });
     }
 
     setIsSubmitting(false);
   };
 
   const handlePreviewFile = async (file: SubmissionFile) => {
-    const { data } = await supabase.storage
-      .from('task-submissions')
-      .createSignedUrl(file.file_path, 3600);
-
-    if (data?.signedUrl) {
-      setPreviewUrl(data.signedUrl);
-      setPreviewFile(file);
+    // In a real implementation, we would generate a signed URL from the backend
+    // For now, we'll construct the URL assuming files are served from the backend
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      toast({ 
+        title: 'Authentication error', 
+        description: 'Please log in again',
+        variant: 'destructive' 
+      });
+      return;
+    }
+    
+    try {
+      const response = await fetch(`http://localhost:5000/api/submission-files/${file.id}/download`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        setPreviewUrl(url);
+        setPreviewFile(file);
+      } else {
+        const errorData = await response.json();
+        toast({ 
+          title: 'Preview failed', 
+          description: errorData.message || 'Failed to load file for preview',
+          variant: 'destructive' 
+        });
+      }
+    } catch (error) {
+      toast({ 
+        title: 'Preview failed', 
+        description: 'Network error occurred',
+        variant: 'destructive' 
+      });
     }
   };
 
   const handleDownloadFile = async (file: SubmissionFile) => {
-    const { data } = await supabase.storage
-      .from('task-submissions')
-      .download(file.file_path);
-
-    if (data) {
-      const url = URL.createObjectURL(data);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = file.file_name;
-      a.click();
-      URL.revokeObjectURL(url);
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      toast({ 
+        title: 'Authentication error', 
+        description: 'Please log in again',
+        variant: 'destructive' 
+      });
+      return;
+    }
+    
+    try {
+      const response = await fetch(`http://localhost:5000/api/submission-files/${file.id}/download`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = file.file_name;
+        a.click();
+        URL.revokeObjectURL(url);
+      } else {
+        const errorData = await response.json();
+        toast({ 
+          title: 'Download failed', 
+          description: errorData.message || 'Failed to download file',
+          variant: 'destructive' 
+        });
+      }
+    } catch (error) {
+      toast({ 
+        title: 'Download failed', 
+        description: 'Network error occurred',
+        variant: 'destructive' 
+      });
     }
   };
 

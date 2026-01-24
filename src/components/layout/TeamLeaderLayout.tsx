@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { Link, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Outlet, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -11,14 +11,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { CheckSquare, LayoutDashboard, LogOut, User, ClipboardList } from 'lucide-react';
+import { LayoutDashboard, LogOut, User, Users, Briefcase, CheckSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-interface UserLayoutProps {
-  children: ReactNode;
-}
-
-const UserLayout = ({ children }: UserLayoutProps) => {
+const TeamLeaderLayout = ({ children }: { children?: ReactNode }) => {
   const { user, isAuthenticated, role, logout, isLoading } = useAuthContext();
   const location = useLocation();
   const navigate = useNavigate();
@@ -31,7 +27,7 @@ const UserLayout = ({ children }: UserLayoutProps) => {
     );
   }
 
-  if (!isAuthenticated || role !== 'user') {
+  if (!isAuthenticated || role !== 'team_leader') {
     return <Navigate to="/login" replace />;
   }
 
@@ -41,8 +37,10 @@ const UserLayout = ({ children }: UserLayoutProps) => {
   };
 
   const navItems = [
-    { path: '/user/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { path: '/user/tasks', label: 'My Tasks', icon: ClipboardList },
+    { path: '/team-leader/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { path: '/team-leader/tasks', label: 'My Tasks', icon: CheckSquare },
+    { path: '/team-leader/team-members', label: 'Team Members', icon: Users },
+    { path: '/team-leader/teams', label: 'My Teams', icon: Briefcase },
   ];
 
   return (
@@ -51,12 +49,7 @@ const UserLayout = ({ children }: UserLayoutProps) => {
       <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-14 items-center justify-between">
           <div className="flex items-center gap-6">
-            <Link to="/user/dashboard" className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                <CheckSquare className="w-5 h-5 text-primary-foreground" />
-              </div>
-              <span className="font-bold">TaskFlow - User</span>
-            </Link>
+            <span className="font-bold">TaskFlow - Team Leader</span>
 
             <nav className="hidden md:flex items-center gap-1">
               {navItems.map(item => (
@@ -82,7 +75,7 @@ const UserLayout = ({ children }: UserLayoutProps) => {
               <Button variant="ghost" className="flex items-center gap-2">
                 <Avatar className="h-8 w-8">
                   <AvatarFallback className="bg-primary/10 text-primary">
-                    {user?.name?.charAt(0).toUpperCase() || 'U'}
+                    {user?.name?.charAt(0).toUpperCase() || 'TL'}
                   </AvatarFallback>
                 </Avatar>
                 <span className="hidden sm:inline-block">{user?.name}</span>
@@ -96,7 +89,7 @@ const UserLayout = ({ children }: UserLayoutProps) => {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => navigate('/user/profile')}>
+              <DropdownMenuItem onClick={() => navigate('/team-leader/profile')}>
                 <User className="h-4 w-4 mr-2" />
                 Profile
               </DropdownMenuItem>
@@ -139,4 +132,4 @@ const UserLayout = ({ children }: UserLayoutProps) => {
   );
 };
 
-export default UserLayout;
+export default TeamLeaderLayout;

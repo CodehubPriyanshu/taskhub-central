@@ -35,37 +35,43 @@ const Sidebar = () => {
     { 
       label: 'Tasks', 
       icon: CheckSquare, 
-      path: '/tasks',
+      path: isAdmin ? '/admin/tasks' : isTeamLeader ? '/team-leader/tasks' : '/user/tasks',
       show: true 
     },
     { 
       label: 'Users', 
       icon: Users, 
-      path: '/users',
+      path: '/admin/users',
       show: isAdmin 
     },
     { 
       label: 'Team Members', 
       icon: UserCircle, 
-      path: '/team-users',
+      path: '/team-leader/team-members',
       show: isTeamLeader
     },
     { 
       label: 'Teams', 
       icon: UsersRound, 
-      path: '/teams',
+      path: isAdmin ? '/admin/teams' : '/team-leader/teams',
       show: isAdmin || isTeamLeader
     },
     { 
       label: 'Departments', 
       icon: Building2, 
-      path: '/departments',
+      path: '/admin/departments',
       show: isAdmin 
     },
   ];
 
   const handleProfileClick = () => {
-    navigate('/profile');
+    if (isAdmin) {
+      navigate('/admin/profile');
+    } else if (isTeamLeader) {
+      navigate('/team-leader/profile');
+    } else {
+      navigate('/user/profile');
+    }
   };
 
   const getRoleBadgeText = () => {

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useSupabaseAuthContext } from '@/contexts/SupabaseAuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,10 +17,11 @@ const passwordSchema = z.string()
   .regex(/[0-9]/, 'Password must contain at least one number');
 
 const AdminSettings = () => {
-  const { user, profile, role, updateEmail, updatePassword } = useSupabaseAuthContext();
+  const { user, updateEmail, updatePassword } = useAuth();
+  const role = user?.role || null;
   const { toast } = useToast();
 
-  const [emailForm, setEmailForm] = useState({ email: profile?.email || '', isLoading: false });
+  const [emailForm, setEmailForm] = useState({ email: user?.email || '', isLoading: false });
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: '',
     newPassword: '',
@@ -33,7 +34,14 @@ const AdminSettings = () => {
 
   // Only admin can access this page
   if (role !== 'admin') {
-    return <Navigate to="/dashboard" replace />;
+    // Redirect to appropriate dashboard based on role
+    if (role === 'team_leader') {
+      return <Navigate to="/team-leader/dashboard" replace />;
+    } else if (role === 'user') {
+      return <Navigate to="/user/dashboard" replace />;
+    } else {
+      return <Navigate to="/login" replace />;
+    }
   }
 
   const handleEmailUpdate = async (e: React.FormEvent) => {
@@ -132,8 +140,8 @@ const AdminSettings = () => {
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
             <div>
-              <p className="font-medium">{profile?.name}</p>
-              <p className="text-sm text-muted-foreground">{profile?.email}</p>
+              <p className="font-medium">{user?.name}</p>
+              <p className="text-sm text-muted-foreground">{user?.email}</p>
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle className="h-4 w-4 text-success" />

@@ -1,10 +1,9 @@
 import { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
-import { useSupabaseAuthContext } from '@/contexts/SupabaseAuthContext';
+import { useAuthContext } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
-import { Database } from '@/integrations/supabase/types';
 
-type AppRole = Database['public']['Enums']['app_role'];
+type AppRole = 'admin' | 'team_leader' | 'user';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -17,7 +16,10 @@ const ProtectedRoute = ({
   allowedRoles,
   redirectTo = '/login'
 }: ProtectedRouteProps) => {
-  const { isAuthenticated, isLoading, role } = useSupabaseAuthContext();
+  const { isAuthenticated, isLoading, user, role: userRole } = useAuthContext();
+  
+  // Use the role from auth context, fallback to user object
+  const role = userRole || user?.role || 'user';
 
   if (isLoading) {
     return (
@@ -33,11 +35,17 @@ const ProtectedRoute = ({
 
   // Check role permissions if specified
   if (allowedRoles && role && !allowedRoles.includes(role)) {
-    // Redirect users to their appropriate dashboard
-    if (role === 'user') {
-      return <Navigate to="/user/dashboard" replace />;
+    // Redirect users to their appropriate dashboard based on role
+    switch (role) {
+      case 'admin':
+        return <Navigate to="/admin/dashboard" replace />;
+      case 'team_leader':
+        return <Navigate to="/team-leader/dashboard" replace />;
+      case 'user':
+        return <Navigate to="/user/dashboard" replace />;
+      default:
+        return <Navigate to="/login" replace />;
     }
-    return <Navigate to="/dashboard" replace />;
   }
 
   return <>{children}</>;

@@ -1,0 +1,186 @@
+-- Step 1: Create the database
+CREATE DATABASE IF NOT EXISTS taskhub_db;
+
+-- Step 2: Use the database
+USE taskhub_db;
+
+-- Step 3: Create the users table
+CREATE TABLE users (
+    id VARCHAR(36) PRIMARY KEY,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Step 4: Create the profiles table
+CREATE TABLE profiles (
+    id VARCHAR(36) PRIMARY KEY,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    phone VARCHAR(20),
+    team_id VARCHAR(36),
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_by VARCHAR(36),
+    FOREIGN KEY (id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE SET NULL,
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+);
+
+-- Step 5: Create the user_roles table
+CREATE TABLE user_roles (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id VARCHAR(36) NOT NULL,
+    role ENUM('admin', 'team_leader', 'user') NOT NULL DEFAULT 'user',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_user_role (user_id)
+);
+
+-- Step 6: Create the departments table
+CREATE TABLE departments (
+    id VARCHAR(36) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL UNIQUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Step 7: Create the teams table
+CREATE TABLE teams (
+    id VARCHAR(36) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    leader_id VARCHAR(36),
+    department_id VARCHAR(36),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (leader_id) REFERENCES users(id) ON DELETE SET NULL,
+    FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE SET NULL
+);
+
+-- Step 8: Create the tasks table
+CREATE TABLE tasks (
+    id VARCHAR(36) PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    assigned_to VARCHAR(36) NOT NULL,
+    created_by VARCHAR(36) NOT NULL,
+    due_date DATE NOT NULL,
+    start_date DATE,
+    priority ENUM('low', 'medium', 'high') DEFAULT 'medium',
+    status ENUM('pending', 'in_progress', 'completed') DEFAULT 'pending',
+    acceptance_status ENUM('pending', 'accepted', 'rejected', 'extension_requested') DEFAULT 'pending',
+    team_id VARCHAR(36),
+    allows_file_upload BOOLEAN DEFAULT TRUE,
+    allows_text_submission BOOLEAN DEFAULT TRUE,
+    max_files INT DEFAULT NULL,
+    rejection_reason TEXT,
+    extension_reason TEXT,
+    requested_deadline DATE,
+    original_deadline DATE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (assigned_to) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE SET NULL
+);
+
+-- Step 9: Create the task_comments table
+CREATE TABLE task_comments (
+    id VARCHAR(36) PRIMARY KEY,
+    task_id VARCHAR(36) NOT NULL,
+    user_id VARCHAR(36) NOT NULL,
+    content TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Step 10: Create the task_submissions table
+CREATE TABLE task_submissions (
+    id VARCHAR(36) PRIMARY KEY,
+    task_id VARCHAR(36) NOT NULL,
+    user_id VARCHAR(36) NOT NULL,
+    status ENUM('draft', 'submitted', 'approved', 'rejected') DEFAULT 'draft',
+    text_content TEXT,
+    submitted_at TIMESTAMP NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Step 11: Create the submission_files table
+CREATE TABLE submission_files (
+    id VARCHAR(36) PRIMARY KEY,
+    submission_id VARCHAR(36) NOT NULL,
+    file_name VARCHAR(255) NOT NULL,
+    file_path VARCHAR(500) NOT NULL,
+    file_type VARCHAR(100),
+    file_size BIGINT,
+    uploaded_by VARCHAR(36),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (submission_id) REFERENCES task_submissions(id) ON DELETE CASCADE,
+    FOREIGN KEY (uploaded_by) REFERENCES users(id) ON DELETE SET NULL
+);
+
+-- Step 12: Create the activity_logs table
+CREATE TABLE activity_logs (
+    id VARCHAR(36) PRIMARY KEY,
+    action VARCHAR(50) NOT NULL,
+    entity_type ENUM('user', 'task', 'team', 'department') NOT NULL,
+    entity_id VARCHAR(36) NOT NULL,
+    user_id VARCHAR(36) NOT NULL,
+    details TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Step 13: Add indexes for better performance
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_profiles_team ON profiles(team_id);
+CREATE INDEX idx_profiles_active ON profiles(is_active);
+CREATE INDEX idx_teams_department ON teams(department_id);
+CREATE INDEX idx_teams_leader ON teams(leader_id);
+CREATE INDEX idx_tasks_assigned ON tasks(assigned_to);
+CREATE INDEX idx_tasks_team ON tasks(team_id);
+CREATE INDEX idx_tasks_status ON tasks(status);
+CREATE INDEX idx_tasks_due_date ON tasks(due_date);
+CREATE INDEX idx_task_comments_task ON task_comments(task_id);
+CREATE INDEX idx_task_submissions_task ON task_submissions(task_id);
+CREATE INDEX idx_task_submissions_user ON task_submissions(user_id);
+CREATE INDEX idx_submission_files_submission ON submission_files(submission_id);
+CREATE INDEX idx_activity_logs_user ON activity_logs(user_id);
+CREATE INDEX idx_activity_logs_entity ON activity_logs(entity_type, entity_id);
+
+-- Step 14: Insert default admin user (remember to replace the password hash with a real one)
+-- Note: The password hash below is just a placeholder - you'll need to generate a proper bcrypt hash
+INSERT INTO users (id, email, password_hash) VALUES 
+('admin-001', 'admin@taskhub.com', '$2a$10$NOMz5YUoK3Oq5W6QFZ.Pk.3wB9MfXqjLgqY6i2zTj8nGm4wJk3d0.');
+
+-- Step 15: Insert profile for the admin user
+INSERT INTO profiles (id, email, name, is_active, created_by) VALUES 
+('admin-001', 'admin@taskhub.com', 'System Administrator', TRUE, 'admin-001');
+
+-- Step 16: Insert role for the admin user
+INSERT INTO user_roles (user_id, role) VALUES 
+('admin-001', 'admin');
+
+-- Step 17: Insert sample departments
+INSERT INTO departments (id, name) VALUES 
+('dept-001', 'Engineering'),
+('dept-002', 'Marketing'),
+('dept-003', 'Sales'),
+('dept-004', 'Human Resources');
+
+-- Step 18: Insert sample teams
+INSERT INTO teams (id, name, department_id) VALUES 
+('team-001', 'Frontend Development', 'dept-001'),
+('team-002', 'Backend Development', 'dept-001'),
+('team-003', 'Digital Marketing', 'dept-002');
+
+-- Step 19: Verification - Show all tables created
+SHOW TABLES;
+
+-- Step 20: Verification - Show sample data
+SELECT * FROM users;
+SELECT * FROM departments;
+SELECT * FROM teams;

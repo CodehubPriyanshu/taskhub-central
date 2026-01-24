@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useSupabaseAuthContext } from '@/contexts/SupabaseAuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { useAuthContext } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -23,13 +22,29 @@ import {
 } from '@/components/ui/table';
 import { Search, Calendar, FileUp, Loader2, Eye } from 'lucide-react';
 import { format, isPast } from 'date-fns';
-import { Database } from '@/integrations/supabase/types';
 
-type Task = Database['public']['Tables']['tasks']['Row'];
-type TaskStatus = Database['public']['Enums']['task_status'];
+type Task = {
+  id: string;
+  title: string;
+  description?: string | null;
+  assigned_to: string;
+  created_by: string;
+  due_date: string;
+  start_date?: string | null;
+  status: 'pending' | 'in_progress' | 'submitted' | 'reviewed';
+  team_id?: string | null;
+  priority?: string | null;
+  created_at: string;
+  updated_at: string;
+  allows_file_upload?: boolean | null;
+  allows_text_submission?: boolean | null;
+  max_files?: number | null;
+};
+
+type TaskStatus = 'pending' | 'in_progress' | 'submitted' | 'reviewed';
 
 const UserTaskList = () => {
-  const { user } = useSupabaseAuthContext();
+  const { user } = useAuthContext();
   const navigate = useNavigate();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -41,14 +56,24 @@ const UserTaskList = () => {
     const fetchTasks = async () => {
       if (!user) return;
       
-      const { data, error } = await supabase
-        .from('tasks')
-        .select('*')
-        .eq('assigned_to', user.id)
-        .order('due_date', { ascending: true });
-
-      if (!error && data) {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        console.error('No auth token found');
+        setIsLoading(false);
+        return;
+      }
+      
+      const response = await fetch(`http://localhost:5000/api/tasks?assigned_to=${user.id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
         setTasks(data);
+      } else {
+        console.error('Failed to fetch tasks:', await response.text());
       }
       setIsLoading(false);
     };

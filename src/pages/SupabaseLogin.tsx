@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
-import { useSupabaseAuthContext } from '@/contexts/SupabaseAuthContext';
+import { useAuthContext } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,16 +9,16 @@ import { CheckSquare, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const SupabaseLogin = () => {
-  const { signIn, isAuthenticated, isLoading: authLoading, role } = useSupabaseAuthContext();
+  const { login, isAuthenticated, isLoading, user } = useAuthContext();
   const navigate = useNavigate();
   const { toast } = useToast();
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  if (authLoading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-primary/10">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -27,8 +27,8 @@ const SupabaseLogin = () => {
   }
 
   if (isAuthenticated) {
-    // Redirect based on role
-    if (role === 'user') {
+    // Redirect based on user role
+    if (user?.role === 'user') {
       return <Navigate to="/user/dashboard" replace />;
     }
     return <Navigate to="/dashboard" replace />;
@@ -36,9 +36,9 @@ const SupabaseLogin = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    setIsSubmitting(true);
 
-    const result = await signIn(email, password);
+    const result = login(email, password);
     
     if (result.success) {
       toast({
@@ -54,7 +54,7 @@ const SupabaseLogin = () => {
       });
     }
 
-    setIsLoading(false);
+    setIsSubmitting(false);
   };
 
   return (
@@ -110,8 +110,8 @@ const SupabaseLogin = () => {
                   </Button>
                 </div>
               </div>
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? (
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
+                {isSubmitting ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     Signing in...

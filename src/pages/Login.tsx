@@ -5,11 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckSquare, Eye, EyeOff } from 'lucide-react';
+import { CheckSquare, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const Login = () => {
-  const { login, isAuthenticated } = useAuthContext();
+  const { login, isAuthenticated, isLoading: isAuthLoading } = useAuthContext();
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -18,29 +18,61 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  if (isAuthLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-primary/10">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
+    // Redirect to appropriate dashboard based on role
+    const { role } = useAuthContext();
+    if (role === 'admin') {
+      return <Navigate to="/admin/dashboard" replace />;
+    } else if (role === 'team_leader') {
+      return <Navigate to="/team-leader/dashboard" replace />;
+    } else {
+      return <Navigate to="/user/dashboard" replace />;
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 500));
+    try {
+      // Simulate network delay
+      await new Promise(resolve => setTimeout(resolve, 500));
 
-    const result = login(email, password);
-    
-    if (result.success) {
+      const result = await login(email, password);
+      
+      if (result.success) {
+        toast({
+          title: 'Welcome back!',
+          description: 'You have successfully logged in.',
+        });
+        
+        // Redirect based on role
+        if (result.role === 'admin') {
+          navigate('/admin/dashboard');
+        } else if (result.role === 'team_leader') {
+          navigate('/team-leader/dashboard');
+        } else {
+          navigate('/user/dashboard');
+        }
+      } else {
+        toast({
+          title: 'Login Failed',
+          description: result.error,
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
       toast({
-        title: 'Welcome back!',
-        description: 'You have successfully logged in.',
-      });
-      navigate('/dashboard');
-    } else {
-      toast({
-        title: 'Login Failed',
-        description: result.error,
+        title: 'Login Error',
+        description: 'An unexpected error occurred during login.',
         variant: 'destructive',
       });
     }

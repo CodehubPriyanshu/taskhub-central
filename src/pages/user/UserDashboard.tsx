@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useSupabaseAuthContext } from '@/contexts/SupabaseAuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { useAuthContext } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -8,13 +7,29 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ClipboardList, Clock, CheckCircle, FileUp, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
-import { Database } from '@/integrations/supabase/types';
 
-type Task = Database['public']['Tables']['tasks']['Row'];
-type TaskStatus = Database['public']['Enums']['task_status'];
+type Task = {
+  id: string;
+  title: string;
+  description?: string | null;
+  assigned_to: string;
+  created_by: string;
+  due_date: string;
+  start_date?: string | null;
+  status: 'pending' | 'in_progress' | 'submitted' | 'reviewed';
+  team_id?: string | null;
+  priority?: string | null;
+  created_at: string;
+  updated_at: string;
+  allows_file_upload?: boolean | null;
+  allows_text_submission?: boolean | null;
+  max_files?: number | null;
+};
+
+type TaskStatus = 'pending' | 'in_progress' | 'submitted' | 'reviewed';
 
 const UserDashboard = () => {
-  const { user, profile } = useSupabaseAuthContext();
+  const { user } = useAuthContext();
   const navigate = useNavigate();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -23,37 +38,35 @@ const UserDashboard = () => {
     const fetchTasks = async () => {
       if (!user) return;
       
-      const { data, error } = await supabase
-        .from('tasks')
-        .select('*')
-        .eq('assigned_to', user.id)
-        .order('due_date', { ascending: true });
-
-      if (!error && data) {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        console.error('No auth token found');
+        setIsLoading(false);
+        return;
+      }
+      
+      const response = await fetch(`http://localhost:5000/api/tasks?assigned_to=${user.id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
         setTasks(data);
+      } else {
+        console.error('Failed to fetch tasks:', await response.text());
       }
       setIsLoading(false);
     };
 
     fetchTasks();
 
-    // Subscribe to real-time updates
-    const channel = supabase
-      .channel('user-tasks')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'tasks',
-          filter: `assigned_to=eq.${user?.id}`,
-        },
-        () => fetchTasks()
-      )
-      .subscribe();
+    // Poll for updates every 30 seconds
+    const intervalId = setInterval(fetchTasks, 30000);
 
     return () => {
-      supabase.removeChannel(channel);
+      clearInterval(intervalId);
     };
   }, [user]);
 
@@ -101,7 +114,7 @@ const UserDashboard = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Welcome, {profile?.name || 'User'}</h1>
+          <h1 className="text-3xl font-bold">Welcome, {user?.name || 'User'}</h1>
           <p className="text-muted-foreground">Here are your assigned tasks</p>
         </div>
       </div>

@@ -1,16 +1,30 @@
 import { useEffect, useState } from 'react';
-import { useSupabaseAuthContext } from '@/contexts/SupabaseAuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { useAuthContext } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { User, Mail, Phone, Users, ClipboardList, CheckCircle, Clock } from 'lucide-react';
-import { Database } from '@/integrations/supabase/types';
 
-type Task = Database['public']['Tables']['tasks']['Row'];
+type Task = {
+  id: string;
+  title: string;
+  description?: string | null;
+  assigned_to: string;
+  created_by: string;
+  due_date: string;
+  start_date?: string | null;
+  status: 'pending' | 'in_progress' | 'submitted' | 'reviewed';
+  team_id?: string | null;
+  priority?: string | null;
+  created_at: string;
+  updated_at: string;
+  allows_file_upload?: boolean | null;
+  allows_text_submission?: boolean | null;
+  max_files?: number | null;
+};
 
 const UserProfile = () => {
-  const { user, profile } = useSupabaseAuthContext();
+  const { user } = useAuthContext();
   const [teamLeader, setTeamLeader] = useState<{ name: string; email: string } | null>(null);
   const [teamName, setTeamName] = useState<string | null>(null);
   const [taskStats, setTaskStats] = useState({
@@ -22,52 +36,81 @@ const UserProfile = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!user || !profile) return;
+      if (!user) return;
+      
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        console.error('No auth token found');
+        return;
+      }
 
-      // Fetch team info
-      if (profile.team_id) {
-        const { data: teamData } = await supabase
-          .from('teams')
-          .select('name, leader_id')
-          .eq('id', profile.team_id)
-          .single();
-
-        if (teamData) {
-          setTeamName(teamData.name);
+      // Fetch profile info to get additional fields like team_id
+      try {
+        const profileResponse = await fetch(`http://localhost:5000/api/profile/${user.id}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (profileResponse.ok) {
+          const profileData = await profileResponse.json();
           
-          // Fetch team leader profile
-          if (teamData.leader_id) {
-            const { data: leaderData } = await supabase
-              .from('profiles')
-              .select('name, email')
-              .eq('id', teamData.leader_id)
-              .single();
+          // Fetch team info
+          if (profileData.team_id) {
+            const teamResponse = await fetch(`http://localhost:5000/api/teams/${profileData.team_id}`, {
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            });
             
-            if (leaderData) {
-              setTeamLeader(leaderData);
+            if (teamResponse.ok) {
+              const teamData = await teamResponse.json();
+              setTeamName(teamData.name);
+              
+              // Fetch team leader profile
+              if (teamData.leader_id) {
+                const leaderResponse = await fetch(`http://localhost:5000/api/profile/${teamData.leader_id}`, {
+                  headers: {
+                    'Authorization': `Bearer ${token}`
+                  }
+                });
+                
+                if (leaderResponse.ok) {
+                  const leaderData = await leaderResponse.json();
+                  setTeamLeader(leaderData);
+                }
+              }
             }
           }
         }
+      } catch (error) {
+        console.error('Error fetching profile info:', error);
       }
 
       // Fetch task stats
-      const { data: tasks } = await supabase
-        .from('tasks')
-        .select('status')
-        .eq('assigned_to', user.id);
-
-      if (tasks) {
-        setTaskStats({
-          total: tasks.length,
-          pending: tasks.filter(t => t.status === 'pending' || t.status === 'in_progress').length,
-          submitted: tasks.filter(t => t.status === 'submitted').length,
-          reviewed: tasks.filter(t => t.status === 'reviewed').length,
+      try {
+        const tasksResponse = await fetch(`http://localhost:5000/api/tasks?assigned_to=${user.id}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
         });
+        
+        if (tasksResponse.ok) {
+          const tasks = await tasksResponse.json();
+          setTaskStats({
+            total: tasks.length,
+            pending: tasks.filter(t => t.status === 'pending' || t.status === 'in_progress').length,
+            submitted: tasks.filter(t => t.status === 'submitted').length,
+            reviewed: tasks.filter(t => t.status === 'reviewed').length,
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching task stats:', error);
       }
     };
 
     fetchData();
-  }, [user, profile]);
+  }, [user]);
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
@@ -82,11 +125,11 @@ const UserProfile = () => {
           <div className="flex items-center gap-4">
             <Avatar className="h-16 w-16">
               <AvatarFallback className="bg-primary text-primary-foreground text-xl">
-                {profile?.name?.charAt(0).toUpperCase() || 'U'}
+                {user?.name?.charAt(0).toUpperCase() || 'U'}
               </AvatarFallback>
             </Avatar>
             <div>
-              <CardTitle className="text-xl">{profile?.name}</CardTitle>
+              <CardTitle className="text-xl">{user?.name}</CardTitle>
               <CardDescription className="flex items-center gap-2 mt-1">
                 <Badge variant="secondary">User</Badge>
               </CardDescription>
@@ -99,18 +142,10 @@ const UserProfile = () => {
               <Mail className="h-5 w-5 text-muted-foreground" />
               <div>
                 <p className="text-xs text-muted-foreground">Email</p>
-                <p className="font-medium">{profile?.email}</p>
+                <p className="font-medium">{user?.email}</p>
               </div>
             </div>
-            {profile?.phone && (
-              <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
-                <Phone className="h-5 w-5 text-muted-foreground" />
-                <div>
-                  <p className="text-xs text-muted-foreground">Phone</p>
-                  <p className="font-medium">{profile.phone}</p>
-                </div>
-              </div>
-            )}
+
           </div>
         </CardContent>
       </Card>
