@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useDataContext } from '@/contexts/DataContext';
 import { useToast } from '@/hooks/use-toast';
@@ -23,11 +23,12 @@ import {
   Copy,
   Check,
   Eye,
-  EyeOff
+  EyeOff,
+  Lock
 } from 'lucide-react';
 
 const AdminProfilePage = () => {
-  const { user: currentUser } = useAuthContext();
+  const { user: currentUser, updateCurrentUser } = useAuthContext();
   const { users, teams, departments, createUser, updateUser, deactivateUser } = useDataContext();
   const { toast } = useToast();
 
@@ -38,6 +39,28 @@ const AdminProfilePage = () => {
   const [generatedCredentials, setGeneratedCredentials] = useState<{ email: string; password: string } | null>(null);
   const [showCredentialsDialog, setShowCredentialsDialog] = useState(false);
 
+  // New state for credential update
+  const [credentialForm, setCredentialForm] = useState({
+    name: currentUser?.name || '',
+    email: currentUser?.email || '',
+    currentPassword: '',
+    newPassword: '',
+    confirmNewPassword: ''
+  });
+  const [credentialErrors, setCredentialErrors] = useState<Record<string, string>>({});
+  const [updatingCredentials, setUpdatingCredentials] = useState(false);
+
+  // Sync credential form with current user when user data changes
+  useEffect(() => {
+    if (currentUser) {
+      setCredentialForm(prev => ({
+        ...prev,
+        name: currentUser.name || prev.name,
+        email: currentUser.email || prev.email
+      }));
+    }
+  }, [currentUser]);
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -45,6 +68,114 @@ const AdminProfilePage = () => {
     teamId: '',
     departmentId: ''
   });
+
+  // Functions for credential update
+  const validateCredentialForm = () => {
+    const errors: Record<string, string> = {};
+    
+    if (!credentialForm.currentPassword.trim()) {
+      errors.currentPassword = 'Current password is required';
+    }
+    
+    if (credentialForm.newPassword && credentialForm.newPassword !== credentialForm.confirmNewPassword) {
+      errors.confirmNewPassword = 'Passwords do not match';
+    }
+    
+    if (credentialForm.newPassword && credentialForm.newPassword.length < 6) {
+      errors.newPassword = 'Password must be at least 6 characters';
+    }
+    
+    if (credentialForm.name.trim() === '') {
+      errors.name = 'Name is required';
+    }
+    
+    if (credentialForm.email.trim() === '') {
+      errors.email = 'Email is required';
+    } else if (!/\S+@\S+\.\S+/.test(credentialForm.email)) {
+      errors.email = 'Email is invalid';
+    }
+    
+    setCredentialErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleUpdateCredentials = async () => {
+    if (!validateCredentialForm()) {
+      return;
+    }
+
+    setUpdatingCredentials(true);
+
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        throw new Error('Authentication token not found');
+      }
+
+      const response = await fetch('http://localhost:5000/api/auth/admin/update-credentials', {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          current_password: credentialForm.currentPassword,
+          new_password: credentialForm.newPassword || undefined,
+          new_email: credentialForm.email,
+          new_name: credentialForm.name,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Update the user in context
+        const updatedUser = {
+          ...currentUser!,
+          name: credentialForm.name,
+          email: credentialForm.email,
+        };
+        
+        // Update context using the updateCurrentUser function from the auth context
+        updateCurrentUser(updatedUser);
+        
+        // Update the credential form state to clear sensitive data
+        setCredentialForm(prev => ({
+          ...prev,
+          currentPassword: '',
+          newPassword: '',
+          confirmNewPassword: ''
+        }));
+        
+        toast({
+          title: "Success",
+          description: "Credentials updated successfully",
+        });
+        
+        // Optionally log out the user if email or password was changed for security
+        if (credentialForm.newPassword || credentialForm.email !== currentUser?.email) {
+          setTimeout(() => {
+            window.location.href = '/login';
+          }, 2000); // Allow 2 seconds for user to see success message
+        }
+      } else {
+        toast({
+          title: "Error",
+          description: data.message || "Failed to update credentials",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Update credentials error:', error);
+      toast({
+        title: "Error",
+        description: "An error occurred while updating credentials",
+        variant: "destructive"
+      });
+    } finally {
+      setUpdatingCredentials(false);
+    }
+  };
 
   const teamLeaders = users.filter(u => u.role === 'team_leader');
   const regularUsers = users.filter(u => u.role === 'user');
@@ -197,6 +328,109 @@ const AdminProfilePage = () => {
                 <Badge variant="default">Administrator</Badge>
               </div>
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Update Admin Credentials Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Lock className="h-5 w-5 text-primary" />
+            Update Admin Credentials
+          </CardTitle>
+          <CardDescription>Update your personal information and account credentials</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="admin-name">Full Name</Label>
+              <Input
+                id="admin-name"
+                placeholder="Enter your full name"
+                value={credentialForm.name}
+                onChange={(e) => setCredentialForm({...credentialForm, name: e.target.value})}
+                disabled={updatingCredentials}
+              />
+              {credentialErrors.name && (
+                <p className="text-red-500 text-sm">{credentialErrors.name}</p>
+              )}
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="admin-email">Email</Label>
+              <Input
+                id="admin-email"
+                type="email"
+                placeholder="Enter your email"
+                value={credentialForm.email}
+                onChange={(e) => setCredentialForm({...credentialForm, email: e.target.value})}
+                disabled={updatingCredentials}
+              />
+              {credentialErrors.email && (
+                <p className="text-red-500 text-sm">{credentialErrors.email}</p>
+              )}
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="current-password">Current Password</Label>
+              <Input
+                id="current-password"
+                type="password"
+                placeholder="Enter current password"
+                value={credentialForm.currentPassword}
+                onChange={(e) => setCredentialForm({...credentialForm, currentPassword: e.target.value})}
+                disabled={updatingCredentials}
+              />
+              {credentialErrors.currentPassword && (
+                <p className="text-red-500 text-sm">{credentialErrors.currentPassword}</p>
+              )}
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="new-password">New Password</Label>
+              <Input
+                id="new-password"
+                type="password"
+                placeholder="Enter new password"
+                value={credentialForm.newPassword}
+                onChange={(e) => setCredentialForm({...credentialForm, newPassword: e.target.value})}
+                disabled={updatingCredentials}
+              />
+              {credentialErrors.newPassword && (
+                <p className="text-red-500 text-sm">{credentialErrors.newPassword}</p>
+              )}
+            </div>
+            
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="confirm-new-password">Confirm New Password</Label>
+              <Input
+                id="confirm-new-password"
+                type="password"
+                placeholder="Confirm new password"
+                value={credentialForm.confirmNewPassword}
+                onChange={(e) => setCredentialForm({...credentialForm, confirmNewPassword: e.target.value})}
+                disabled={updatingCredentials}
+              />
+              {credentialErrors.confirmNewPassword && (
+                <p className="text-red-500 text-sm">{credentialErrors.confirmNewPassword}</p>
+              )}
+            </div>
+          </div>
+          
+          <div className="mt-6 flex justify-end">
+            <Button 
+              onClick={handleUpdateCredentials} 
+              disabled={updatingCredentials}
+            >
+              {updatingCredentials ? (
+                <>
+                  <span>Updating...</span>
+                </>
+              ) : (
+                'Update Credentials'
+              )}
+            </Button>
           </div>
         </CardContent>
       </Card>

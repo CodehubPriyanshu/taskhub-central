@@ -187,7 +187,7 @@ router.put('/update-email', async (req, res) => {
     const { new_email } = req.body;
 
     if (!token || !new_email) {
-      return res.status(400).json({ message: 'Authorization token and new email are required' });
+      return res.status(400).json({ message: 'Authorization token and new password are required' });
     }
 
     const decoded = jwt.verify(token, JWT_SECRET);
@@ -244,6 +244,119 @@ router.put('/update-password', async (req, res) => {
   } catch (error) {
     console.error('Update password error:', error);
     res.status(500).json({ message: 'Server error updating password' });
+  }
+});
+
+// Update admin credentials route
+router.put('/admin/update-credentials', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    const { current_password, new_password, new_email, new_name } = req.body;
+
+    if (!token) {
+      return res.status(401).json({ message: 'Authorization token required' });
+    }
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+
+    // Get current user data
+    const getUserQuery = `
+      SELECT u.id, u.email, u.password_hash, p.name, ur.role
+      FROM users u
+      LEFT JOIN profiles p ON u.id = p.id
+      LEFT JOIN user_roles ur ON u.id = ur.user_id
+      WHERE u.id = ?
+    `;
+    const [userRows] = await db.execute(getUserQuery, [decoded.id]);
+
+    if (userRows.length === 0) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const user = userRows[0];
+
+    // Check if user is admin
+    if (user.role !== 'admin') {
+      return res.status(403).json({ message: 'Only admins can update credentials' });
+    }
+
+    // Verify current password if changing email or password
+    if ((new_email && new_email !== user.email) || new_password) {
+      if (!current_password) {
+        return res.status(400).json({ message: 'Current password is required to update email or password' });
+      }
+
+      const isMatch = await bcrypt.compare(current_password, user.password_hash);
+      if (!isMatch) {
+        return res.status(401).json({ message: 'Current password is incorrect' });
+      }
+    }
+
+    // Check if new email already exists (if provided and different)
+    if (new_email && new_email !== user.email) {
+      const checkEmailQuery = 'SELECT id FROM users WHERE email = ? AND id != ?';
+      const [existingUsers] = await db.execute(checkEmailQuery, [new_email, decoded.id]);
+      
+      if (existingUsers.length > 0) {
+        return res.status(409).json({ message: 'Email already exists' });
+      }
+    }
+
+    // Begin transaction
+    const connection = await db.getConnection();
+    await connection.beginTransaction();
+
+    try {
+      if (new_email && new_email !== user.email) {
+        // Update users table
+        const updateUserQuery = 'UPDATE users SET email = ? WHERE id = ?';
+        await connection.execute(updateUserQuery, [new_email, decoded.id]);
+
+        // Update profiles table
+        const updateProfileQuery = 'UPDATE profiles SET email = ? WHERE id = ?';
+        await connection.execute(updateProfileQuery, [new_email, decoded.id]);
+      }
+
+      if (new_password) {
+        // Hash new password
+        const saltRounds = 10;
+        const hashedPassword = await bcrypt.hash(new_password, saltRounds);
+
+        // Update password
+        const updatePasswordQuery = 'UPDATE users SET password_hash = ? WHERE id = ?';
+        await connection.execute(updatePasswordQuery, [hashedPassword, decoded.id]);
+      }
+
+      if (new_name && new_name !== user.name) {
+        // Update name in profiles table
+        const updateNameQuery = 'UPDATE profiles SET name = ? WHERE id = ?';
+        await connection.execute(updateNameQuery, [new_name, decoded.id]);
+      }
+
+      await connection.commit();
+      connection.release();
+
+      // Fetch updated user data
+      const [updatedUserRows] = await db.execute(getUserQuery, [decoded.id]);
+      const updatedUser = updatedUserRows[0];
+
+      res.json({ 
+        message: 'Credentials updated successfully',
+        user: {
+          id: updatedUser.id,
+          email: updatedUser.email,
+          name: updatedUser.name,
+          role: updatedUser.role
+        }
+      });
+    } catch (error) {
+      await connection.rollback();
+      connection.release();
+      throw error;
+    }
+  } catch (error) {
+    console.error('Update admin credentials error:', error);
+    res.status(500).json({ message: 'Server error updating credentials' });
   }
 });
 
