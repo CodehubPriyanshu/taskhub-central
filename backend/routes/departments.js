@@ -5,7 +5,15 @@ const router = express.Router();
 // Get all departments
 router.get('/', async (req, res) => {
   try {
-    const query = 'SELECT * FROM departments ORDER BY name ASC';
+    const query = `
+      SELECT d.*, 
+             COUNT(p.id) as user_count
+      FROM departments d
+      LEFT JOIN teams t ON d.id = t.department_id
+      LEFT JOIN profiles p ON t.id = p.team_id
+      GROUP BY d.id, d.name, d.created_at
+      ORDER BY d.name ASC
+    `;
     const [rows] = await db.execute(query);
     res.json(rows);
   } catch (error) {

@@ -53,8 +53,8 @@ const Sidebar = () => {
     { 
       label: 'Teams', 
       icon: UsersRound, 
-      path: isAdmin ? '/admin/teams' : '/team-leader/teams',
-      show: isAdmin || isTeamLeader
+      path: '/team-leader/teams',
+      show: isTeamLeader
     },
     { 
       label: 'Departments', 

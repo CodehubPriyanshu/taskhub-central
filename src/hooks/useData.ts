@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { User, Team, Department, Task, TaskComment, ActivityLog, TaskAcceptanceStatus } from '@/types';
 import { generateCredentials, simpleHash } from '@/lib/credentialGenerator';
+import { userApi, teamApi, departmentApi, taskApi } from '@/services/api';
 
 // Simple UUID generator
 const generateId = () => {

@@ -20,14 +20,14 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Plus, Pencil, Trash2, Search, Building2, UsersRound } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, Building2, UsersRound, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Navigate } from 'react-router-dom';
 import { format } from 'date-fns';
 
 const DepartmentsPage = () => {
   const { user: currentUser } = useAuthContext();
-  const { departments, teams, createDepartment, updateDepartment, deleteDepartment } = useDataContext();
+  const { departments, teams, users, createDepartment, updateDepartment, deleteDepartment } = useDataContext();
   const { toast } = useToast();
 
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -121,6 +121,13 @@ const DepartmentsPage = () => {
     return teams.filter(t => t.departmentId === deptId).length;
   };
 
+  const getUserCount = (deptId: string) => {
+    // Get all teams in this department
+    const departmentTeams = teams.filter(t => t.departmentId === deptId);
+    // Count all users assigned to those teams
+    return users.filter(u => departmentTeams.some(t => t.id === u.teamId)).length;
+  };
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -153,6 +160,7 @@ const DepartmentsPage = () => {
             <TableRow>
               <TableHead>Department</TableHead>
               <TableHead>Teams</TableHead>
+              <TableHead>Users</TableHead>
               <TableHead>Created</TableHead>
               <TableHead className="w-24">Actions</TableHead>
             </TableRow>
@@ -179,6 +187,12 @@ const DepartmentsPage = () => {
                     <div className="flex items-center gap-2">
                       <UsersRound className="h-4 w-4 text-muted-foreground" />
                       {getTeamCount(dept.id)} teams
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                      {getUserCount(dept.id)} users
                     </div>
                   </TableCell>
                   <TableCell className="text-muted-foreground">

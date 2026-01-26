@@ -5,15 +5,16 @@ const router = express.Router();
 // Get all tasks
 router.get('/', async (req, res) => {
   try {
-    const { assigned_to, status, team_id } = req.query;
+    const { assigned_to, status, team_id, created_by_role } = req.query;
     
     let query = `
       SELECT t.*, p.name as assigned_user_name, p.email as assigned_user_email, 
-             tp.name as team_name, dp.name as department_name
+             tp.name as team_name, dp.name as department_name, ur.role as created_by_role
       FROM tasks t
       LEFT JOIN profiles p ON t.assigned_to = p.id
       LEFT JOIN teams tp ON t.team_id = tp.id
       LEFT JOIN departments dp ON tp.department_id = dp.id
+      LEFT JOIN user_roles ur ON t.created_by = ur.user_id
       WHERE 1=1
     `;
     const params = [];
@@ -31,6 +32,11 @@ router.get('/', async (req, res) => {
     if (team_id) {
       query += ' AND t.team_id = ?';
       params.push(team_id);
+    }
+
+    if (created_by_role) {
+      query += ' AND ur.role = ?';
+      params.push(created_by_role);
     }
 
     query += ' ORDER BY t.created_at DESC';

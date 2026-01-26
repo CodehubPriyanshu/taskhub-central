@@ -37,7 +37,7 @@ import { Navigate } from 'react-router-dom';
 
 const UsersPage = () => {
   const { user: currentUser } = useAuthContext();
-  const { users, teams, createUser, updateUser, deleteUser, deactivateUser } = useDataContext();
+  const { users, teams, departments, createUser, updateUser, deleteUser, deactivateUser } = useDataContext();
   const { toast } = useToast();
 
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -53,6 +53,7 @@ const UsersPage = () => {
     password: '',
     role: 'user' as UserRole,
     teamId: '',
+    departmentId: '',
   });
 
   // Only admin can access this page
@@ -70,12 +71,17 @@ const UsersPage = () => {
   const handleOpenDialog = (user?: User) => {
     if (user) {
       setEditingUser(user);
+      // Find the department for the user's team
+      const userTeam = teams.find(t => t.id === user.teamId);
+      const departmentId = userTeam ? userTeam.departmentId : '';
+      
       setFormData({
         name: user.name,
         email: user.email,
         password: '',
         role: user.role,
         teamId: user.teamId || '',
+        departmentId: departmentId,
       });
       setAutoGenerateCredentials(false);
     } else {
@@ -86,6 +92,7 @@ const UsersPage = () => {
         password: '',
         role: 'user',
         teamId: '',
+        departmentId: '',
       });
       setAutoGenerateCredentials(true);
     }
@@ -144,6 +151,8 @@ const UsersPage = () => {
       });
       setDialogOpen(false);
     } else {
+      // If a department is selected but no team, we might need to create a team
+      // For now, we'll just pass the teamId as is, since the UI allows selecting a team within the department
       const result = createUser(
         {
           name: formData.name,
@@ -225,7 +234,7 @@ const UsersPage = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Users</h1>
+          <h1 className="text-2xl font-bold">Users & Team Leaders</h1>
           <p className="text-muted-foreground">Manage team leaders and users with auto-generated credentials</p>
         </div>
         <Button onClick={() => handleOpenDialog()}>
@@ -252,7 +261,7 @@ const UsersPage = () => {
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Email</TableHead>
-              <TableHead>Role</TableHead>
+              <TableHead>Role Type</TableHead>
               <TableHead>Team</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="w-32">Actions</TableHead>
@@ -388,6 +397,23 @@ const UsersPage = () => {
               </Select>
             </div>
             <div className="space-y-2">
+              <Label htmlFor="department">Department</Label>
+              <Select
+                value={formData.departmentId || "none"}
+                onValueChange={(value) => setFormData({ ...formData, departmentId: value === "none" ? "" : value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select department" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No Department</SelectItem>
+                  {departments.map((dept) => (
+                    <SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="team">Team</Label>
               <Select
                 value={formData.teamId || "none"}
@@ -398,7 +424,7 @@ const UsersPage = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">No Team</SelectItem>
-                  {teams.map((team) => (
+                  {teams.filter(team => !formData.departmentId || team.departmentId === formData.departmentId).map((team) => (
                     <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>
                   ))}
                 </SelectContent>

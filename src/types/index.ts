@@ -13,6 +13,7 @@ export interface User {
   password: string;
   role: UserRole;
   teamId?: string;
+  departmentId?: string;
   avatar?: string;
   createdAt: string;
   createdById?: string; // Who created this user
@@ -31,6 +32,7 @@ export interface Department {
   id: string;
   name: string;
   createdAt: string;
+  user_count?: number;
 }
 
 export interface Task {

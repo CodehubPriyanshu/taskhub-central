@@ -28,6 +28,7 @@ import UserProfile from "./pages/user/UserProfile";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminProfilePage from "./pages/profile/AdminProfilePage";
 import TeamLeaderProfilePage from "./pages/profile/TeamLeaderProfilePage";
+import AdminTasksPage from "./pages/admin/AdminTasksPage";
 import NotFound from "./pages/NotFound";
 
 // Initialize mock data
@@ -53,9 +54,8 @@ const App = () => (
                 <Route path="/admin/*" element={<AdminLayout />}>  
                   <Route index element={<ProtectedRoute allowedRoles={['admin']}><Dashboard /></ProtectedRoute>} />
                   <Route path="dashboard" element={<ProtectedRoute allowedRoles={['admin']}><Dashboard /></ProtectedRoute>} />
-                  <Route path="tasks" element={<ProtectedRoute allowedRoles={['admin']}><Tasks /></ProtectedRoute>} />
+                  <Route path="tasks" element={<ProtectedRoute allowedRoles={['admin']}><AdminTasksPage /></ProtectedRoute>} />
                   <Route path="users" element={<ProtectedRoute allowedRoles={['admin']}><UsersPage /></ProtectedRoute>} />
-                  <Route path="teams" element={<ProtectedRoute allowedRoles={['admin']}><TeamsPage /></ProtectedRoute>} />
                   <Route path="departments" element={<ProtectedRoute allowedRoles={['admin']}><DepartmentsPage /></ProtectedRoute>} />
                   <Route path="profile" element={<ProtectedRoute allowedRoles={['admin']}><AdminProfilePage /></ProtectedRoute>} />
                 </Route>
@@ -84,7 +84,6 @@ const App = () => (
                 <Route path="/tasks" element={<Navigate to="/user/tasks" replace />} />
                 <Route path="/users" element={<Navigate to="/admin/users" replace />} />
                 <Route path="/team-users" element={<Navigate to="/team-leader/team-members" replace />} />
-                <Route path="/teams" element={<Navigate to="/admin/teams" replace />} />
                 <Route path="/departments" element={<Navigate to="/admin/departments" replace />} />
                 <Route path="/profile" element={<Navigate to="/user/profile" replace />} />
 

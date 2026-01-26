@@ -6,10 +6,11 @@ const router = express.Router();
 router.get('/', async (req, res) => {
   try {
     const query = `
-      SELECT u.id, u.email, p.name, p.phone, p.team_id, p.is_active, p.created_at, ur.role
+      SELECT u.id, u.email, p.name, p.phone, p.team_id, p.is_active, p.created_at, ur.role, t.department_id
       FROM users u
       LEFT JOIN profiles p ON u.id = p.id
       LEFT JOIN user_roles ur ON u.id = ur.user_id
+      LEFT JOIN teams t ON p.team_id = t.id
       ORDER BY p.name ASC
     `;
     
@@ -27,10 +28,11 @@ router.get('/:id', async (req, res) => {
     const { id } = req.params;
     
     const query = `
-      SELECT u.id, u.email, p.name, p.phone, p.team_id, p.is_active, p.created_at, ur.role
+      SELECT u.id, u.email, p.name, p.phone, p.team_id, p.is_active, p.created_at, ur.role, t.department_id
       FROM users u
       LEFT JOIN profiles p ON u.id = p.id
       LEFT JOIN user_roles ur ON u.id = ur.user_id
+      LEFT JOIN teams t ON p.team_id = t.id
       WHERE u.id = ?
     `;
     
