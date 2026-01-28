@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthContext } from '@/contexts/AuthContext';
+import { useDataContext } from '@/contexts/DataContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -20,68 +21,27 @@ import {
   TableHeader, 
   TableRow 
 } from '@/components/ui/table';
-import { Search, Calendar, FileUp, Loader2, Eye } from 'lucide-react';
+import { Search, Calendar, FileUp, Loader2, Eye, Check, Send } from 'lucide-react';
 import { format, isPast } from 'date-fns';
 
-type Task = {
-  id: string;
-  title: string;
-  description?: string | null;
-  assigned_to: string;
-  created_by: string;
-  due_date: string;
-  start_date?: string | null;
-  status: 'pending' | 'in_progress' | 'submitted' | 'reviewed';
-  team_id?: string | null;
-  priority?: string | null;
-  created_at: string;
-  updated_at: string;
-  allows_file_upload?: boolean | null;
-  allows_text_submission?: boolean | null;
-  max_files?: number | null;
-};
+// Import the Task type from the types file
+import { Task } from '@/types';
 
-type TaskStatus = 'pending' | 'in_progress' | 'submitted' | 'reviewed';
+type TaskStatus = 'pending' | 'in_progress' | 'completed';
 
 const UserTaskList = () => {
   const { user } = useAuthContext();
+  const { tasks: allTasks, users } = useDataContext(); // Get tasks and users from context
   const navigate = useNavigate();
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
 
-  useEffect(() => {
-    const fetchTasks = async () => {
-      if (!user) return;
-      
-      const token = localStorage.getItem('auth_token');
-      if (!token) {
-        console.error('No auth token found');
-        setIsLoading(false);
-        return;
-      }
-      
-      const response = await fetch(`http://localhost:5000/api/tasks?assigned_to=${user.id}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setTasks(data);
-      } else {
-        console.error('Failed to fetch tasks:', await response.text());
-      }
-      setIsLoading(false);
-    };
+  // Filter tasks assigned to the current user
+  const userTasks = allTasks.filter(task => task.assignedUserId === user?.id);
 
-    fetchTasks();
-  }, [user]);
-
-  const filteredTasks = tasks.filter(task => {
+  const filteredTasks = userTasks.filter(task => {
     const matchesSearch = task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           task.description?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === 'all' || task.status === statusFilter;
@@ -93,8 +53,7 @@ const UserTaskList = () => {
     const config: Record<TaskStatus, { label: string; className: string }> = {
       pending: { label: 'Pending', className: 'bg-muted text-muted-foreground' },
       in_progress: { label: 'In Progress', className: 'bg-primary/10 text-primary' },
-      submitted: { label: 'Submitted', className: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300' },
-      reviewed: { label: 'Reviewed', className: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' },
+      completed: { label: 'Completed', className: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' },
     };
     const s = status || 'pending';
     return <Badge className={config[s].className}>{config[s].label}</Badge>;
@@ -173,7 +132,7 @@ const UserTaskList = () => {
         <CardContent>
           {filteredTasks.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              {tasks.length === 0 
+              {userTasks.length === 0 
                 ? 'No tasks assigned to you yet.' 
                 : 'No tasks match your filters.'}
             </div>
@@ -192,9 +151,8 @@ const UserTaskList = () => {
                 </TableHeader>
                 <TableBody>
                   {filteredTasks.map(task => {
-                    const isOverdue = isPast(new Date(task.due_date)) && 
-                                     task.status !== 'submitted' && 
-                                     task.status !== 'reviewed';
+                    const isOverdue = isPast(new Date(task.deadline)) && 
+                                     task.status !== 'completed';
                     return (
                       <TableRow key={task.id} className={isOverdue ? 'bg-destructive/5' : ''}>
                         <TableCell>
@@ -210,22 +168,14 @@ const UserTaskList = () => {
                         <TableCell>
                           <div className={`flex items-center gap-1 ${isOverdue ? 'text-destructive' : ''}`}>
                             <Calendar className="h-3 w-3" />
-                            {format(new Date(task.due_date), 'MMM d, yyyy')}
+                            {format(new Date(task.deadline), 'MMM d, yyyy')}
                           </div>
                         </TableCell>
                         <TableCell>
                           <div className="flex gap-1">
-                            {task.allows_file_upload && (
-                              <Badge variant="outline" className="text-xs">
-                                <FileUp className="h-3 w-3 mr-1" />
-                                Files
-                              </Badge>
-                            )}
-                            {task.allows_text_submission && (
-                              <Badge variant="outline" className="text-xs">
-                                Text
-                              </Badge>
-                            )}
+                            <Badge variant="outline" className="text-xs">
+                              Task
+                            </Badge>
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
@@ -234,9 +184,9 @@ const UserTaskList = () => {
                             onClick={() => navigate(`/user/task/${task.id}`)}
                           >
                             <Eye className="h-4 w-4 mr-1" />
-                            {task.status === 'submitted' || task.status === 'reviewed' 
+                            {task.status === 'completed' 
                               ? 'View' 
-                              : 'Submit'}
+                              : 'Work on Task'}
                           </Button>
                         </TableCell>
                       </TableRow>

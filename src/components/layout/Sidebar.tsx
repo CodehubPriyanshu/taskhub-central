@@ -9,7 +9,8 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
-  Settings
+  Settings,
+  UserCheck
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthContext } from '@/contexts/AuthContext';
@@ -39,29 +40,42 @@ const Sidebar = () => {
       show: true 
     },
     { 
+      label: 'User Tasks', 
+      icon: CheckSquare, 
+      path: '/team-leader/tasks-user',
+      show: isTeamLeader 
+    },
+    { 
       label: 'Users', 
       icon: Users, 
       path: '/admin/users',
       show: isAdmin 
     },
     { 
-      label: 'Team Members', 
-      icon: UserCircle, 
-      path: '/team-leader/team-members',
-      show: isTeamLeader
-    },
-    { 
       label: 'Teams', 
-      icon: UsersRound, 
-      path: '/team-leader/teams',
-      show: isTeamLeader
-    },
-    { 
-      label: 'Departments', 
-      icon: Building2, 
-      path: '/admin/departments',
+      icon: UserCheck, 
+      path: '/admin/team',
       show: isAdmin 
     },
+    // Removed Team Members, Teams, and Departments as per requirements
+    // { 
+    //   label: 'Team Members', 
+    //   icon: UserCircle, 
+    //   path: '/team-leader/team-members',
+    //   show: isTeamLeader
+    // },
+    // { 
+    //   label: 'Teams', 
+    //   icon: UsersRound, 
+    //   path: '/team-leader/teams',
+    //   show: isTeamLeader
+    // },
+    // { 
+    //   label: 'Departments', 
+    //   icon: Building2, 
+    //   path: '/admin/departments',
+    //   show: isAdmin 
+    // },
   ];
 
   const handleProfileClick = () => {

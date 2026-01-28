@@ -6,6 +6,8 @@ export type TaskStatus = 'pending' | 'in_progress' | 'completed';
 
 export type TaskAcceptanceStatus = 'pending' | 'accepted' | 'rejected' | 'extension_requested';
 
+export type TaskRequestStatus = 'pending' | 'approved' | 'rejected';
+
 export interface User {
   id: string;
   name: string;
@@ -52,6 +54,14 @@ export interface Task {
   rejectionReason?: string;
   extensionReason?: string;
   requestedDeadline?: string;
+  // New fields for enhanced workflow
+  estimatedTimeToComplete?: string; // e.g., "2 hours", "3 days"
+  acceptanceTimestamp?: string;
+  isOverdue?: boolean;
+  isAtRisk?: boolean;
+  editRequestStatus?: TaskRequestStatus;
+  editRequestReason?: string;
+  editRequestDetails?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -60,16 +70,6 @@ export interface TaskComment {
   id: string;
   content: string;
   userId: string;
-  createdAt: string;
-}
-
-export interface ActivityLog {
-  id: string;
-  action: string;
-  entityType: 'user' | 'task' | 'team' | 'department';
-  entityId: string;
-  userId: string;
-  details: string;
   createdAt: string;
 }
 

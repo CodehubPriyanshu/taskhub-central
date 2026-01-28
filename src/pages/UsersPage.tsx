@@ -51,9 +51,7 @@ const UsersPage = () => {
     name: '',
     email: '',
     password: '',
-    role: 'user' as UserRole,
-    teamId: '',
-    departmentId: '',
+    role: 'team_leader' as UserRole,
   });
 
   // Only admin can access this page
@@ -71,17 +69,11 @@ const UsersPage = () => {
   const handleOpenDialog = (user?: User) => {
     if (user) {
       setEditingUser(user);
-      // Find the department for the user's team
-      const userTeam = teams.find(t => t.id === user.teamId);
-      const departmentId = userTeam ? userTeam.departmentId : '';
-      
       setFormData({
         name: user.name,
         email: user.email,
         password: '',
         role: user.role,
-        teamId: user.teamId || '',
-        departmentId: departmentId,
       });
       setAutoGenerateCredentials(false);
     } else {
@@ -90,9 +82,7 @@ const UsersPage = () => {
         name: '',
         email: '',
         password: '',
-        role: 'user',
-        teamId: '',
-        departmentId: '',
+        role: 'team_leader',
       });
       setAutoGenerateCredentials(true);
     }
@@ -139,7 +129,6 @@ const UsersPage = () => {
         name: formData.name,
         email: formData.email,
         role: formData.role,
-        teamId: formData.teamId || undefined,
       };
       if (formData.password) {
         updateData.password = formData.password;
@@ -151,15 +140,12 @@ const UsersPage = () => {
       });
       setDialogOpen(false);
     } else {
-      // If a department is selected but no team, we might need to create a team
-      // For now, we'll just pass the teamId as is, since the UI allows selecting a team within the department
       const result = createUser(
         {
           name: formData.name,
           email: formData.email || '',
           password: formData.password || '',
           role: formData.role,
-          teamId: formData.teamId || undefined,
         },
         currentUser!.id,
         autoGenerateCredentials
@@ -322,7 +308,7 @@ const UsersPage = () => {
           <DialogHeader>
             <DialogTitle>{editingUser ? 'Edit User' : 'Add User'}</DialogTitle>
             <DialogDescription>
-              {!editingUser && 'Create a new user with auto-generated or custom credentials'}
+              {!editingUser && 'Create a new user with auto-generated or custom credentials' }
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -397,36 +383,17 @@ const UsersPage = () => {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="department">Department</Label>
+              <Label htmlFor="role">Role</Label>
               <Select
-                value={formData.departmentId || "none"}
-                onValueChange={(value) => setFormData({ ...formData, departmentId: value === "none" ? "" : value })}
+                value={formData.role}
+                onValueChange={(value: UserRole) => setFormData({ ...formData, role: value })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select department" />
+                  <SelectValue placeholder="Select role" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">No Department</SelectItem>
-                  {departments.map((dept) => (
-                    <SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="team">Team</Label>
-              <Select
-                value={formData.teamId || "none"}
-                onValueChange={(value) => setFormData({ ...formData, teamId: value === "none" ? "" : value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select team" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">No Team</SelectItem>
-                  {teams.filter(team => !formData.departmentId || team.departmentId === formData.departmentId).map((team) => (
-                    <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>
-                  ))}
+                  <SelectItem value="team_leader">Team Leader</SelectItem>
+                  <SelectItem value="user">User</SelectItem>
                 </SelectContent>
               </Select>
             </div>

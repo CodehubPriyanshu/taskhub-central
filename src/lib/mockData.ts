@@ -1,4 +1,4 @@
-import { User, Team, Department, Task, ActivityLog } from '@/types';
+import { User, Team, Department, Task } from '@/types';
 
 export const mockDepartments: Department[] = [
   { id: 'dept-1', name: 'Engineering', createdAt: '2024-01-01' },
@@ -176,27 +176,6 @@ export const mockTasks: Task[] = [
   },
 ];
 
-export const mockActivityLogs: ActivityLog[] = [
-  {
-    id: 'log-1',
-    action: 'created',
-    entityType: 'user',
-    entityId: 'user-2',
-    userId: 'user-1',
-    details: 'Admin created Team Leader "John Leader"',
-    createdAt: '2024-01-01T10:00:00Z',
-  },
-  {
-    id: 'log-2',
-    action: 'created',
-    entityType: 'task',
-    entityId: 'task-1',
-    userId: 'user-2',
-    details: 'Task "Implement user authentication" created and assigned to Bob Developer',
-    createdAt: '2024-01-15T09:00:00Z',
-  },
-];
-
 // Initialize localStorage with mock data if empty
 export const initializeMockData = () => {
   if (!localStorage.getItem('tms_users')) {
@@ -211,7 +190,5 @@ export const initializeMockData = () => {
   if (!localStorage.getItem('tms_tasks')) {
     localStorage.setItem('tms_tasks', JSON.stringify(mockTasks));
   }
-  if (!localStorage.getItem('tms_activity_logs')) {
-    localStorage.setItem('tms_activity_logs', JSON.stringify(mockActivityLogs));
-  }
+
 };

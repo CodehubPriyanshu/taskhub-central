@@ -1,7 +1,8 @@
 import { useState, useCallback, useEffect } from 'react';
-import { User, Team, Department, Task, TaskComment, ActivityLog, TaskAcceptanceStatus } from '@/types';
+import { User, Team, Department, Task, TaskComment, TaskAcceptanceStatus } from '@/types';
 import { generateCredentials, simpleHash } from '@/lib/credentialGenerator';
 import { userApi, teamApi, departmentApi, taskApi } from '@/services/api';
+import { format, isPast, parseISO } from 'date-fns';
 
 // Simple UUID generator
 const generateId = () => {
@@ -13,7 +14,6 @@ export const useData = () => {
   const [teams, setTeams] = useState<Team[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
   const [lastUpdate, setLastUpdate] = useState<number>(Date.now());
 
   // Load data from localStorage
@@ -22,7 +22,6 @@ export const useData = () => {
     setTeams(JSON.parse(localStorage.getItem('tms_teams') || '[]'));
     setDepartments(JSON.parse(localStorage.getItem('tms_departments') || '[]'));
     setTasks(JSON.parse(localStorage.getItem('tms_tasks') || '[]'));
-    setActivityLogs(JSON.parse(localStorage.getItem('tms_activity_logs') || '[]'));
     setLastUpdate(Date.now());
   }, []);
 
@@ -48,19 +47,7 @@ export const useData = () => {
     setLastUpdate(now);
   };
 
-  // Activity log helper
-  const addActivityLog = useCallback((log: Omit<ActivityLog, 'id' | 'createdAt'>) => {
-    const newLog: ActivityLog = {
-      ...log,
-      id: generateId(),
-      createdAt: new Date().toISOString(),
-    };
-    const updatedLogs = [...activityLogs, newLog];
-    localStorage.setItem('tms_activity_logs', JSON.stringify(updatedLogs));
-    setActivityLogs(updatedLogs);
-    triggerUpdate();
-    return newLog;
-  }, [activityLogs]);
+
 
   // User operations with auto-credential generation
   const createUser = useCallback((
@@ -90,35 +77,21 @@ export const useData = () => {
     localStorage.setItem('tms_users', JSON.stringify(updatedUsers));
     setUsers(updatedUsers);
 
-    addActivityLog({
-      action: 'created',
-      entityType: 'user',
-      entityId: newUser.id,
-      userId: creatorId,
-      details: `Created ${newUser.role === 'team_leader' ? 'Team Leader' : 'User'} "${newUser.name}" with email ${newUser.email}`,
-    });
+
 
     triggerUpdate();
     return { user: newUser, credentials: generatedCreds };
-  }, [users, addActivityLog]);
+  }, [users]);
 
   const updateUser = useCallback((id: string, userData: Partial<User>, updaterId?: string) => {
     const updatedUsers = users.map(u => u.id === id ? { ...u, ...userData } : u);
     localStorage.setItem('tms_users', JSON.stringify(updatedUsers));
     setUsers(updatedUsers);
 
-    if (updaterId) {
-      addActivityLog({
-        action: 'updated',
-        entityType: 'user',
-        entityId: id,
-        userId: updaterId,
-        details: `Updated user "${users.find(u => u.id === id)?.name}"`,
-      });
-    }
+
 
     triggerUpdate();
-  }, [users, addActivityLog]);
+  }, [users]);
 
   const deleteUser = useCallback((id: string, deleterId?: string) => {
     const user = users.find(u => u.id === id);
@@ -126,31 +99,17 @@ export const useData = () => {
     localStorage.setItem('tms_users', JSON.stringify(updatedUsers));
     setUsers(updatedUsers);
 
-    if (deleterId && user) {
-      addActivityLog({
-        action: 'deleted',
-        entityType: 'user',
-        entityId: id,
-        userId: deleterId,
-        details: `Deleted user "${user.name}"`,
-      });
-    }
+
 
     triggerUpdate();
-  }, [users, addActivityLog]);
+  }, [users]);
 
   const deactivateUser = useCallback((id: string, deactivatorId: string) => {
     const user = users.find(u => u.id === id);
     updateUser(id, { isActive: false });
 
-    addActivityLog({
-      action: 'deactivated',
-      entityType: 'user',
-      entityId: id,
-      userId: deactivatorId,
-      details: `Deactivated user "${user?.name}"`,
-    });
-  }, [users, updateUser, addActivityLog]);
+
+  }, [users, updateUser]);
 
   // Team operations
   const createTeam = useCallback((teamData: Omit<Team, 'id' | 'createdAt'>, creatorId?: string) => {
@@ -163,19 +122,11 @@ export const useData = () => {
     localStorage.setItem('tms_teams', JSON.stringify(updatedTeams));
     setTeams(updatedTeams);
 
-    if (creatorId) {
-      addActivityLog({
-        action: 'created',
-        entityType: 'team',
-        entityId: newTeam.id,
-        userId: creatorId,
-        details: `Created team "${newTeam.name}"`,
-      });
-    }
+
 
     triggerUpdate();
     return newTeam;
-  }, [teams, addActivityLog]);
+  }, [teams]);
 
   const updateTeam = useCallback((id: string, teamData: Partial<Team>) => {
     const updatedTeams = teams.map(t => t.id === id ? { ...t, ...teamData } : t);
@@ -237,18 +188,11 @@ export const useData = () => {
     localStorage.setItem('tms_tasks', JSON.stringify(updatedTasks));
     setTasks(updatedTasks);
 
-    const assignedUser = users.find(u => u.id === taskData.assignedUserId);
-    addActivityLog({
-      action: 'created',
-      entityType: 'task',
-      entityId: newTask.id,
-      userId: creatorId,
-      details: `Created task "${newTask.title}" and assigned to ${assignedUser?.name || 'Unknown'}`,
-    });
+
 
     triggerUpdate();
     return newTask;
-  }, [tasks, users, addActivityLog]);
+  }, [tasks, users]);
 
   const updateTask = useCallback((id: string, taskData: Partial<Task>, updaterId?: string) => {
     const oldTask = tasks.find(t => t.id === id);
@@ -258,25 +202,10 @@ export const useData = () => {
     localStorage.setItem('tms_tasks', JSON.stringify(updatedTasks));
     setTasks(updatedTasks);
 
-    if (updaterId && oldTask) {
-      let details = `Updated task "${oldTask.title}"`;
-      if (taskData.status && taskData.status !== oldTask.status) {
-        details = `Changed task "${oldTask.title}" status to ${taskData.status}`;
-      }
-      if (taskData.acceptanceStatus && taskData.acceptanceStatus !== oldTask.acceptanceStatus) {
-        details = `Task "${oldTask.title}" ${taskData.acceptanceStatus}`;
-      }
-      addActivityLog({
-        action: 'updated',
-        entityType: 'task',
-        entityId: id,
-        userId: updaterId,
-        details,
-      });
-    }
+
 
     triggerUpdate();
-  }, [tasks, addActivityLog]);
+  }, [tasks]);
 
   const deleteTask = useCallback((id: string, deleterId?: string) => {
     const task = tasks.find(t => t.id === id);
@@ -284,24 +213,80 @@ export const useData = () => {
     localStorage.setItem('tms_tasks', JSON.stringify(updatedTasks));
     setTasks(updatedTasks);
 
-    if (deleterId && task) {
-      addActivityLog({
-        action: 'deleted',
-        entityType: 'task',
-        entityId: id,
-        userId: deleterId,
-        details: `Deleted task "${task.title}"`,
-      });
-    }
+
 
     triggerUpdate();
-  }, [tasks, addActivityLog]);
+  }, [tasks]);
 
   // Task workflow actions
-  const acceptTask = useCallback((taskId: string, userId: string) => {
-    updateTask(taskId, { acceptanceStatus: 'accepted', status: 'in_progress' }, userId);
-  }, [updateTask]);
+  const acceptTask = useCallback((taskId: string, userId: string, estimatedTime?: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+    
+    const updates: Partial<Task> = { 
+      acceptanceStatus: 'accepted', 
+      status: 'in_progress',
+      acceptanceTimestamp: new Date().toISOString()
+    };
+    
+    if (estimatedTime) {
+      updates.estimatedTimeToComplete = estimatedTime;
+    }
+    
+    // Calculate overdue and at-risk status
+    const calculatedStatus = calculateTaskStatus({ ...task, ...updates } as Task);
+    updates.isOverdue = calculatedStatus.isOverdue;
+    updates.isAtRisk = calculatedStatus.isAtRisk;
+    
+    updateTask(taskId, updates, userId);
+  }, [updateTask, tasks]);
 
+  // Helper functions for task monitoring
+  const calculateTaskStatus = (task: Task): { isOverdue: boolean; isAtRisk: boolean } => {
+    const now = new Date();
+    const deadline = new Date(task.deadline);
+    const acceptedTime = task.acceptanceTimestamp ? new Date(task.acceptanceTimestamp) : null;
+    
+    let isOverdue = false;
+    let isAtRisk = false;
+    
+    // Check if task is overdue
+    if (task.status === 'in_progress' && now > deadline) {
+      isOverdue = true;
+    }
+    
+    // Check if task is at risk (approaching deadline)
+    if (task.status === 'in_progress' && acceptedTime && task.estimatedTimeToComplete) {
+      // Parse estimated time
+      const estimatedMs = parseEstimatedTime(task.estimatedTimeToComplete);
+      const estimatedCompletion = new Date(acceptedTime.getTime() + estimatedMs);
+      
+      // If estimated completion is close to or past deadline
+      if (estimatedCompletion >= deadline || 
+          (deadline.getTime() - now.getTime()) < 24 * 60 * 60 * 1000) { // Less than 1 day remaining
+        isAtRisk = true;
+      }
+    }
+    
+    return { isOverdue, isAtRisk };
+  };
+  
+  // Helper to parse estimated time string
+  const parseEstimatedTime = (timeStr: string): number => {
+    const match = timeStr.match(/(\d+)\s*(hour|day|week)s?/i);
+    if (!match) return 0;
+    
+    const value = parseInt(match[1]);
+    const unit = match[2].toLowerCase();
+    
+    switch (unit) {
+      case 'hour': return value * 60 * 60 * 1000;
+      case 'day': return value * 24 * 60 * 60 * 1000;
+      case 'week': return value * 7 * 24 * 60 * 60 * 1000;
+      default: return 0;
+    }
+  };
+  
   const rejectTask = useCallback((taskId: string, userId: string, reason: string) => {
     updateTask(taskId, { 
       acceptanceStatus: 'rejected', 
@@ -342,6 +327,30 @@ export const useData = () => {
     }, approverId);
   }, [updateTask]);
 
+  const requestTaskEdit = useCallback((taskId: string, userId: string, reason: string, details: string) => {
+    updateTask(taskId, { 
+      editRequestStatus: 'pending',
+      editRequestReason: reason,
+      editRequestDetails: details
+    }, userId);
+  }, [updateTask]);
+
+  const approveTaskEdit = useCallback((taskId: string, approverId: string) => {
+    updateTask(taskId, { 
+      editRequestStatus: 'approved',
+      editRequestReason: undefined,
+      editRequestDetails: undefined
+    }, approverId);
+  }, [updateTask]);
+
+  const rejectTaskEdit = useCallback((taskId: string, approverId: string) => {
+    updateTask(taskId, { 
+      editRequestStatus: 'rejected',
+      editRequestReason: undefined,
+      editRequestDetails: undefined
+    }, approverId);
+  }, [updateTask]);
+
   const addTaskComment = useCallback((taskId: string, content: string, userId: string) => {
     const comment: TaskComment = {
       id: generateId(),
@@ -365,7 +374,6 @@ export const useData = () => {
     teams,
     departments,
     tasks,
-    activityLogs,
     loadData,
     createUser,
     updateUser,
@@ -385,7 +393,9 @@ export const useData = () => {
     requestExtension,
     approveExtension,
     rejectExtension,
+    requestTaskEdit,
+    approveTaskEdit,
+    rejectTaskEdit,
     addTaskComment,
-    addActivityLog,
   };
 };

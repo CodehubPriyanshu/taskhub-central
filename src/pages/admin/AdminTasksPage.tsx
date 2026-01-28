@@ -57,27 +57,33 @@ const AdminTasksPage = () => {
     deadline: '',
   });
 
-  // Only show tasks created by team leaders
-  const teamLeaderTasks = useMemo(() => {
-    return tasks.filter(task => {
-      const creator = users.find(u => u.id === task.createdById);
-      return creator && creator.role === 'team_leader';
-    });
-  }, [tasks, users]);
+  // Show all tasks but group them appropriately
+  const allTasks = useMemo(() => {
+    return tasks;
+  }, [tasks]);
 
   // Group tasks by team leader
   const tasksByLeader = useMemo(() => {
     const grouped: Record<string, Task[]> = {};
-    teamLeaderTasks.forEach(task => {
+    allTasks.forEach(task => {
       const creator = users.find(u => u.id === task.createdById);
-      const leaderId = creator?.id || 'unknown';
-      if (!grouped[leaderId]) {
-        grouped[leaderId] = [];
+      if (creator?.role === 'team_leader') { // Only group tasks created by team leaders
+        const leaderId = creator.id;
+        if (!grouped[leaderId]) {
+          grouped[leaderId] = [];
+        }
+        grouped[leaderId].push(task);
       }
-      grouped[leaderId].push(task);
     });
     return grouped;
-  }, [teamLeaderTasks, users]);
+  }, [allTasks, users]);
+
+  const teamLeaderTasks = useMemo(() => {
+    return allTasks.filter(task => {
+      const creator = users.find(u => u.id === task.createdById);
+      return creator?.role === 'team_leader'; // Only show tasks created by team leaders
+    });
+  }, [allTasks, users]);
 
   const filteredTasks = useMemo(() => {
     let filtered = [...teamLeaderTasks];
@@ -152,6 +158,7 @@ const AdminTasksPage = () => {
         status: 'pending',
         deadline: taskFormData.deadline,
         startDate: new Date().toISOString().split('T')[0],
+        createdById: taskFormData.teamLeaderId, // Use selected team leader as creator
       },
       taskFormData.teamLeaderId // Use selected team leader as creator
     );

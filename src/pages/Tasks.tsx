@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useDataContext } from '@/contexts/DataContext';
 import TaskCard from '@/components/tasks/TaskCard';
-import TaskDialog from '@/components/tasks/TaskDialog';
+import TaskDialogComponent from '@/components/tasks/TaskDialogComponent';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -50,7 +50,11 @@ const Tasks = () => {
 
     // Role-based filtering
     if (user?.role === 'team_leader') {
-      filtered = filtered.filter(t => t.teamId === user.teamId);
+      // Show only tasks created by admins for team leaders
+      filtered = filtered.filter(t => {
+        const creator = users.find(u => u.id === t.createdById);
+        return creator?.role === 'admin' && t.assignedUserId === user.id;
+      });
     } else if (user?.role === 'user') {
       filtered = filtered.filter(t => t.assignedUserId === user.id);
     }
@@ -108,7 +112,21 @@ const Tasks = () => {
 
   const handleTaskClick = (task: Task) => {
     setSelectedTask(task);
-    setDialogMode(user?.role === 'user' ? 'view' : 'edit');
+    
+    // Set dialog mode based on role and task acceptance status
+    if (user?.role === 'user') {
+      setDialogMode('view');
+    } else if (user?.role === 'team_leader') {
+      // For team leaders, show view/edit mode depending on if task is accepted
+      if (task.acceptanceStatus === 'pending') {
+        setDialogMode('view'); // Show acceptance options
+      } else {
+        setDialogMode('edit');
+      }
+    } else {
+      setDialogMode('edit');
+    }
+    
     setDialogOpen(true);
   };
 
@@ -160,7 +178,6 @@ const Tasks = () => {
     }
   };
 
-  const canCreateTask = user?.role === 'admin' || user?.role === 'team_leader';
   const showWorkflowAlerts = (user?.role === 'admin' || user?.role === 'team_leader') && 
     (extensionRequests.length > 0 || rejectedTasks.length > 0);
 
@@ -174,7 +191,7 @@ const Tasks = () => {
             {user?.role === 'user' ? 'Your assigned tasks' : 'Manage and track all tasks'}
           </p>
         </div>
-        {canCreateTask && (
+        {(user?.role === 'admin') && (
           <Button onClick={handleCreateTask}>
             <Plus className="h-4 w-4 mr-2" />
             New Task
@@ -364,13 +381,19 @@ const Tasks = () => {
         </div>
       </div>
 
-      {/* Task Dialog */}
-      <TaskDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        task={selectedTask}
-        mode={dialogMode}
-      />
+      {/* Task Dialog - Will be handled differently since we're changing to a new implementation */}
+      {/* We need to create our own task dialog for the enhanced functionality */}
+      
+      {/* Enhanced Task Dialog */}
+      {selectedTask && (
+        <TaskDialogComponent
+          task={selectedTask}
+          mode={dialogMode}
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          user={user}
+        />
+      )}
 
       {/* Extension Review Dialog */}
       <Dialog open={extensionDialogOpen} onOpenChange={setExtensionDialogOpen}>

@@ -14,16 +14,14 @@ import {
   XCircle,
   AlertTriangle,
   Calendar,
-  User,
   Building2
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { isPast, format } from 'date-fns';
-import { Separator } from '@/components/ui/separator';
 
 const Dashboard = () => {
   const { user } = useAuthContext();
-  const { tasks, users, teams, activityLogs } = useDataContext();
+  const { tasks, users, teams } = useDataContext();
 
   const filteredTasks = useMemo(() => {
     if (user?.role === 'admin') {
@@ -56,24 +54,7 @@ const Dashboard = () => {
       .slice(0, 6);
   }, [filteredTasks]);
 
-  const recentLogs = useMemo(() => {
-    let logs = [...activityLogs].sort((a, b) => 
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
-    
-    // Filter logs based on role
-    if (user?.role === 'team_leader') {
-      const teamUserIds = users.filter(u => u.teamId === user.teamId).map(u => u.id);
-      logs = logs.filter(log => 
-        teamUserIds.includes(log.userId) || 
-        log.userId === user.id
-      );
-    } else if (user?.role === 'user') {
-      logs = logs.filter(log => log.userId === user.id);
-    }
-    
-    return logs.slice(0, 5);
-  }, [activityLogs, user, users]);
+
 
   const getUser = (userId: string) => users.find(u => u.id === userId);
   const getUserTeam = () => teams.find(t => t.id === user?.teamId);
@@ -280,35 +261,7 @@ const Dashboard = () => {
         </CardContent>
       </Card>
 
-      {/* Activity Log */}
-      {recentLogs.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Activity Log</CardTitle>
-            <CardDescription>Recent system activities</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {recentLogs.map((log) => {
-                const logUser = getUser(log.userId);
-                return (
-                  <div key={log.id} className="flex items-start gap-3 text-sm">
-                    <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
-                      <User className="h-4 w-4" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-foreground">{log.details}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {logUser?.name || 'System'} • {format(new Date(log.createdAt), 'MMM dd, yyyy HH:mm')}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      
 
       {/* Task Status Overview */}
       <div className="grid gap-4 md:grid-cols-3">
