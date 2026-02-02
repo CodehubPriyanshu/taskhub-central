@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Teams - TaskFlow</title>
+    <link rel="stylesheet" href="../css/common.css">
+    <link rel="stylesheet" href="../css/admin.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>TaskFlow</h2>
+                <p>Admin Portal</p>
+            </div>
+            <ul class="sidebar-nav">
+                <li><a href="dashboard.html" class="nav-link">Dashboard</a></li>
+                <li><a href="tasks.html" class="nav-link">Tasks</a></li>
+                <li><a href="users.html" class="nav-link">Users</a></li>
+                <li><a href="teams.html" class="nav-link active">Teams</a></li>
+                <li><a href="profile.html" class="nav-link">Profile</a></li>
+            </ul>
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <p>Welcome, <span id="adminName">Admin</span></p>
+                </div>
+                <button id="logoutBtn" class="logout-btn">Logout</button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="content-header">
+                <h1>Team Management</h1>
+                <p>Manage teams and team leaders</p>
+            </div>
+
+            <!-- Team Stats Cards -->
+            <div class="stats-cards">
+                <div class="card">
+                    <h3>Total Teams</h3>
+                    <p id="totalTeams">0</p>
+                </div>
+                <div class="card">
+                    <h3>Teams with Leaders</h3>
+                    <p id="teamsWithLeaders">0</p>
+                </div>
+                <div class="card">
+                    <h3>Teams without Leaders</h3>
+                    <p id="teamsWithoutLeaders">0</p>
+                </div>
+            </div>
+
+            <!-- Teams Table -->
+            <div class="teams-container">
+                <div class="table-header">
+                    <h2>Teams</h2>
+                    <button id="createTeamBtn" class="primary-btn">Create Team</button>
+                </div>
+                
+                <div class="table-container">
+                    <table class="teams-table">
+                        <thead>
+                            <tr>
+                                <th>Team Name</th>
+                                <th>Team Leader</th>
+                                <th>Department</th>
+                                <th>Members</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="teamsTableBody">
+                            <!-- Teams will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Empty State -->
+                <div class="empty-state" id="emptyState" style="display: none;">
+                    <h3>No teams found</h3>
+                    <p>Create your first team to get started</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Team Modal -->
+    <div id="createTeamModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Create New Team</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="createTeamForm">
+                    <div class="form-group">
+                        <label for="teamName">Team Name</label>
+                        <input type="text" id="teamName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="teamDepartment">Department</label>
+                        <input type="text" id="teamDepartment" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="teamLeader">Assign Team Leader</label>
+                        <select id="teamLeader">
+                            <option value="">Select Team Leader (Optional)</option>
+                        </select>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="cancel-btn">Cancel</button>
+                        <button type="submit" class="submit-btn">Create Team</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/admin.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check authentication
+            if (!authManager.getIsAuthenticated() || authManager.getUserRole() !== 'admin') {
+                window.location.href = '../index.html';
+                return;
+            }
+
+            // Load admin name
+            document.getElementById('adminName').textContent = authManager.getUserName() || 'Admin';
+
+            // Initialize admin teams page
+            adminManager.initTeamsPage();
+        });
+    </script>
+</body>
+</html>

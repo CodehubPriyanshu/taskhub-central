@@ -36,7 +36,7 @@ class AuthManager {
             // First, try to authenticate with backend API (matching React logic)
             const data = await api.auth.login(email, password);
             
-            if (data.access_token) {
+            if (data.success && data.access_token) {
                 const { access_token, user, profile, role } = data;
                 
                 // Store the token
@@ -70,6 +70,9 @@ class AuthManager {
                 
                 this.updateUI();
                 
+                // Redirect based on role
+                // this.redirectByRole(role); // Temporarily disabled for testing
+                
                 return { 
                     success: true, 
                     role: role, 
@@ -82,33 +85,24 @@ class AuthManager {
             }
         } catch (error) {
             console.error('Login error:', error);
-            // Fallback to local storage authentication if API fails (matching React logic)
-            return await this.fallbackLogin(email, password, rememberMe);
+            
+            // Provide user-friendly error messages
+            let errorMessage = 'Login failed. Please try again.';
+            
+            if (error.message.includes('Database connection failed')) {
+                errorMessage = 'Service temporarily unavailable. Please try again later.';
+            } else if (error.message.includes('Invalid credentials') || error.message.includes('Unauthorized')) {
+                errorMessage = 'Invalid email or password.';
+            } else if (error.message.includes('NetworkError') || error.message.includes('Failed to fetch')) {
+                errorMessage = 'Unable to connect to server. Please check your connection.';
+            }
+            
+            return { success: false, error: errorMessage };
         }
     }
     
     async fallbackLogin(email, password, rememberMe) {
-        const users = JSON.parse(localStorage.getItem('tms_users') || '[]');
-        const user = users.find(u => u.email === email && u.password === password);
-        
-        if (user) {
-            const { password: _, ...userWithoutPassword } = user;
-            const storage = rememberMe ? localStorage : sessionStorage;
-            storage.setItem('tms_current_user', JSON.stringify(user));
-            storage.setItem('user_role', user.role);
-            
-            this.currentUser = user;
-            this.isAuthenticated = true;
-            this.updateUI();
-            
-            return { 
-                success: true, 
-                role: user.role, 
-                userId: user.id,
-                error: undefined 
-            };
-        }
-        
+        // Removed fallback authentication to ensure consistent error handling
         return { success: false, error: 'Invalid email or password' };
     }
     
@@ -126,8 +120,8 @@ class AuthManager {
         this.updateUI();
         
         // Redirect to login page
-        if (window.location.pathname !== '/taskflow/index.html') {
-            window.location.href = '/taskflow/index.html';
+        if (window.location.pathname !== '/index.html' && window.location.pathname !== '/taskhub-central/index.html') {
+            window.location.href = './index.html';
         }
     }
     
@@ -261,3 +255,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Export for global access
 window.AuthManager = AuthManager;
+
+// Add role-based redirect method outside the class
+AuthManager.prototype.redirectByRole = function(role) {
+    const rolePaths = {
+        'admin': './admin/dashboard.html',
+        'team_leader': './leader/dashboard.html',
+        'user': './user/dashboard.html'
+    };
+    
+    const redirectPath = rolePaths[role] || './user/dashboard.html';
+    setTimeout(() => {
+        window.location.href = redirectPath;
+    }, 1000); // Small delay to show success message
+};

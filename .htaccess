@@ -1,0 +1,14 @@
+# Enable URL rewriting
+RewriteEngine On
+
+# Allow access to PHP files directly
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Route API requests to appropriate PHP files
+# This allows URLs like /routes/auth.php/login to work properly
+RewriteRule ^routes/([^/]+)\.php/(.*)$ routes/$1.php [L,QSA]
+
+# Handle PATH_INFO for API routing
+RewriteCond %{REQUEST_URI} ^/routes/([^/]+)\.php/(.+)$
+RewriteRule ^routes/([^/]+)\.php/(.*)$ routes/$1.php [L,QSA,E=PATH_INFO:/$2]

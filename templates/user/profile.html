@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile - TaskFlow</title>
+    <link rel="stylesheet" href="../css/common.css">
+    <link rel="stylesheet" href="../css/user.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>TaskFlow</h2>
+                <p>User Portal</p>
+            </div>
+            <ul class="sidebar-nav">
+                <li><a href="dashboard.html" class="nav-link">Dashboard</a></li>
+                <li><a href="tasks.html" class="nav-link">Tasks</a></li>
+                <li><a href="profile.html" class="nav-link active">Profile</a></li>
+            </ul>
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <p>Welcome, <span id="userName">User</span></p>
+                </div>
+                <button id="logoutBtn" class="logout-btn">Logout</button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="content-header">
+                <h1>User Profile</h1>
+                <p>Manage your profile information</p>
+            </div>
+
+            <!-- Profile Sections -->
+            <div class="profile-container">
+                <!-- Personal Details -->
+                <div class="profile-section">
+                    <h2>Personal Details</h2>
+                    <div class="profile-details">
+                        <div class="detail-item">
+                            <label>Name:</label>
+                            <span id="profileName">User Name</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Email:</label>
+                            <span id="profileEmail">user@taskhub.com</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Role:</label>
+                            <span id="profileRole">User</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Team:</label>
+                            <span id="profileTeam">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Change Password -->
+                <div class="profile-section">
+                    <h2>Change Password</h2>
+                    <form id="changePasswordForm">
+                        <div class="form-group">
+                            <label for="currentPassword">Current Password</label>
+                            <input type="password" id="currentPassword" autocomplete="current-password" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="newPassword">New Password</label>
+                            <input type="password" id="newPassword" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="confirmPassword">Confirm New Password</label>
+                            <input type="password" id="confirmPassword" required>
+                        </div>
+                        <button type="submit" class="submit-btn">Update Password</button>
+                    </form>
+                </div>
+
+                <!-- Task Statistics -->
+                <div class="profile-section">
+                    <h2>Task Statistics</h2>
+                    <div class="stats-cards">
+                        <div class="card">
+                            <h3>Total Tasks</h3>
+                            <p id="totalTasks">0</p>
+                        </div>
+                        <div class="card">
+                            <h3>Completed Tasks</h3>
+                            <p id="completedTasks">0</p>
+                        </div>
+                        <div class="card">
+                            <h3>Pending Tasks</h3>
+                            <p id="pendingTasks">0</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/user.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check authentication
+            if (!authManager.getIsAuthenticated() || authManager.getUserRole() !== 'user') {
+                window.location.href = '../index.html';
+                return;
+            }
+
+            // Load user name
+            document.getElementById('userName').textContent = authManager.getUserName() || 'User';
+
+            // Initialize user profile page
+            userManager.initProfilePage();
+        });
+    </script>
+</body>
+</html>

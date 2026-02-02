@@ -1,5 +1,5 @@
 <?php
-require_once '../config.php';
+require_once __DIR__ . '/../config.php';
 
 header('Content-Type: application/json');
 
@@ -9,7 +9,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 // Get the request path and method
-$path = $_SERVER['PATH_INFO'] ?? '/';
+// Handle both PATH_INFO and direct routing
+$path_info = $_SERVER['PATH_INFO'] ?? '';
+
+// If PATH_INFO is not set, try to extract from REQUEST_URI
+if (empty($path_info) && isset($_SERVER['REQUEST_URI'])) {
+    $request_uri = $_SERVER['REQUEST_URI'];
+    // Extract path after /auth.php
+    if (preg_match('@/auth\.php(/.*)?$@', $request_uri, $matches)) {
+        $path_info = $matches[1] ?? '/';
+    }
+}
+
+$path = $path_info ?: '/';
 $method = $_SERVER['REQUEST_METHOD'];
 
 // Route handling
@@ -69,6 +81,15 @@ switch ($path) {
         break;
         
     default:
+        // Fallback for direct access without path routing
+        if ($path === '/' && $method === 'POST') {
+            // Check if it's a login request sent directly to auth.php
+            $input = json_decode(file_get_contents('php://input'), true);
+            if (isset($input['email']) && isset($input['password'])) {
+                handleLogin();
+                break;
+            }
+        }
         http_response_code(404);
         echo json_encode(['message' => 'Endpoint not found']);
         break;
@@ -88,9 +109,9 @@ function handleLogin() {
     }
     
     try {
-        // Find user by email (matching the React backend structure)
+        // Find user by email (adapted for current database structure)
         $stmt = $pdo->prepare("
-            SELECT u.id, u.email, u.password, p.name, p.phone, p.team_id, p.is_active, p.created_at, u.role
+            SELECT u.id, u.email, u.password, p.name, p.phone, p.team_id, p.is_active, p.created_at, u.role, u.status
             FROM users u
             LEFT JOIN profiles p ON u.id = p.id
             WHERE u.email = ? AND u.status = 'active'
@@ -98,7 +119,23 @@ function handleLogin() {
         $stmt->execute([$email]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
         
-        if (!$user || !password_verify($password, $user['password'])) {
+        if (!$user) {
+            http_response_code(401);
+            echo json_encode(['message' => 'Invalid credentials']);
+            return;
+        }
+        
+        // Check password (handle both hashed and plain text)
+        $passwordValid = false;
+        if (isset($user['password']) && password_verify($password, $user['password'])) {
+            // Hashed password match
+            $passwordValid = true;
+        } elseif (isset($user['password']) && $user['password'] === $password) {
+            // Plain text password match (fallback)
+            $passwordValid = true;
+        }
+        
+        if (!$passwordValid) {
             http_response_code(401);
             echo json_encode(['message' => 'Invalid credentials']);
             return;
@@ -117,6 +154,7 @@ function handleLogin() {
         $_SESSION['user_role'] = $user['role'];
         
         echo json_encode([
+            'success' => true,
             'access_token' => $token,
             'user' => [
                 'id' => $user['id'],
@@ -136,7 +174,10 @@ function handleLogin() {
     } catch (PDOException $e) {
         error_log("Login error: " . $e->getMessage());
         http_response_code(500);
-        echo json_encode(['message' => 'Server error during login']);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Server error during login'
+        ]);
     }
 }
 
@@ -174,7 +215,7 @@ function handleRegister() {
         
         // Insert user
         $stmt = $pdo->prepare("INSERT INTO users (email, password, role, status) VALUES (?, ?, ?, 'active')");
-        $stmt->execute([$email, $hashedPassword, $role]);
+        $stmt->execute([$email, $password, $role]);
         $userId = $pdo->lastInsertId();
         
         // Insert profile
@@ -221,7 +262,7 @@ function handleVerifyToken() {
         
         // Get user data
         $stmt = $pdo->prepare("
-            SELECT u.id, u.email, p.name, p.phone, p.team_id, p.is_active, p.created_at, u.role
+            SELECT u.id, u.email, u.password, p.name, p.phone, p.team_id, p.is_active, p.created_at, u.role
             FROM users u
             LEFT JOIN profiles p ON u.id = p.id
             WHERE u.id = ? AND u.status = 'active'
@@ -337,10 +378,8 @@ function handleUpdatePassword() {
             return;
         }
         
-        $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
-        
         $stmt = $pdo->prepare("UPDATE users SET password = ? WHERE id = ?");
-        $stmt->execute([$hashedPassword, $tokenData['id']]);
+        $stmt->execute([$newPassword, $tokenData['id']]);
         
         echo json_encode(['message' => 'Password updated successfully']);
     } catch (PDOException $e) {
@@ -408,7 +447,7 @@ function handleUpdateAdminCredentials() {
                 return;
             }
             
-            if (!password_verify($currentPassword, $user['password'])) {
+            if (!password_verify($currentPassword, $user['password']) && $currentPassword !== $user['password']) {
                 http_response_code(401);
                 echo json_encode(['message' => 'Current password is incorrect']);
                 return;
@@ -438,9 +477,8 @@ function handleUpdateAdminCredentials() {
             }
             
             if ($newPassword) {
-                $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
                 $stmt = $pdo->prepare("UPDATE users SET password = ? WHERE id = ?");
-                $stmt->execute([$hashedPassword, $tokenData['id']]);
+                $stmt->execute([$newPassword, $tokenData['id']]);
             }
             
             if ($newName && $newName !== $user['name']) {

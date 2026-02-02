@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Team Leader Profile - TaskFlow</title>
+    <link rel="stylesheet" href="../css/common.css">
+    <link rel="stylesheet" href="../css/team-leader.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>TaskFlow</h2>
+                <p>Team Leader Portal</p>
+            </div>
+            <ul class="sidebar-nav">
+                <li><a href="dashboard.html" class="nav-link">Dashboard</a></li>
+                <li><a href="tasks.html" class="nav-link">Tasks</a></li>
+                <li><a href="tasks-user.html" class="nav-link">User Tasks</a></li>
+                <li><a href="profile.html" class="nav-link active">Profile</a></li>
+            </ul>
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <p>Welcome, <span id="leaderName">Team Leader</span></p>
+                </div>
+                <button id="logoutBtn" class="logout-btn">Logout</button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="content-header">
+                <h1>Team Leader Profile</h1>
+                <p>Manage your profile and team information</p>
+            </div>
+
+            <!-- Profile Sections -->
+            <div class="profile-container">
+                <!-- Personal Details -->
+                <div class="profile-section">
+                    <h2>Personal Details</h2>
+                    <div class="profile-details">
+                        <div class="detail-item">
+                            <label>Name:</label>
+                            <span id="profileName">Team Leader Name</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Email:</label>
+                            <span id="profileEmail">leader@taskhub.com</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Role:</label>
+                            <span id="profileRole">Team Leader</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Team Information -->
+                <div class="profile-section">
+                    <h2>Team Information</h2>
+                    <div class="profile-details">
+                        <div class="detail-item">
+                            <label>Team Name:</label>
+                            <span id="teamName">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Department:</label>
+                            <span id="teamDepartment">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Team Members:</label>
+                            <span id="teamMembersCount">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Team Members -->
+                <div class="profile-section">
+                    <h2>Team Members</h2>
+                    <div class="table-container">
+                        <table class="profile-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Status</th>
+                                    <th>Tasks Assigned</th>
+                                </tr>
+                            </thead>
+                            <tbody id="teamMembersTableBody">
+                                <!-- Team members will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Create Team User -->
+                <div class="profile-section">
+                    <h2>Create Team User</h2>
+                    <form id="createTeamUserForm">
+                        <div class="form-group">
+                            <label for="userName">Name</label>
+                            <input type="text" id="userName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="userEmail">Email</label>
+                            <input type="email" id="userEmail" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="userPassword">Password</label>
+                            <input type="password" id="userPassword" required>
+                        </div>
+                        <button type="submit" class="submit-btn">Create Team User</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/teamLeader.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check authentication
+            if (!authManager.getIsAuthenticated() || authManager.getUserRole() !== 'team_leader') {
+                window.location.href = '../index.html';
+                return;
+            }
+
+            // Load team leader name
+            document.getElementById('leaderName').textContent = authManager.getUserName() || 'Team Leader';
+
+            // Initialize team leader profile page
+            teamLeaderManager.initProfilePage();
+        });
+    </script>
+</body>
+</html>

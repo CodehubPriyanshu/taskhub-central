@@ -1,9 +1,10 @@
 # TaskFlow - Role-Based Task Management System
 
-A complete HTML/PHP implementation of a role-based task management system that matches the React/Vite version functionality.
+A complete HTML/PHP implementation of a role-based task management system with a modern, professional login interface that matches the React/Vite version functionality.
 
 ## Features
 
+- **Modern Login Interface**: Professional landing-style login screen with demo credentials
 - **Role-based Access Control**: Admin, Team Leader, and User roles
 - **Complete Authentication System**: Login, registration, and session management
 - **Task Management**: Create, assign, and track tasks
@@ -48,10 +49,10 @@ After setup, you can use these accounts to test the system:
 taskflow/
 ├── config.php           # Database configuration
 ├── setup.php            # Database setup script
-├── index.html           # Login page
+├── index.html           # Modern login page with demo credentials
+├── dashboard.html       # User dashboard after login
 ├── css/                 # Stylesheets
 │   ├── common.css      # Shared styles
-│   ├── login.css       # Login page styles
 │   ├── admin.css       # Admin styles
 │   ├── team-leader.css # Team leader styles
 │   └── user.css        # User styles

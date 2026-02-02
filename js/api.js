@@ -1,5 +1,5 @@
 // API Configuration
-const API_BASE_URL = '/taskflow/routes';
+const API_BASE_URL = '/routes';
 
 // Helper function to get auth token
 function getAuthToken() {
@@ -30,12 +30,30 @@ async function apiCall(endpoint, options = {}) {
     try {
         const response = await fetch(url, config);
         
+        // Check if response is JSON
+        const contentType = response.headers.get('content-type');
+        const isJson = contentType && contentType.includes('application/json');
+        
         if (!response.ok) {
-            const errorData = await response.text();
-            throw new Error(errorData || `HTTP error! status: ${response.status}`);
+            // Handle error responses
+            if (isJson) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.message || errorData.error || `HTTP error! status: ${response.status}`);
+            } else {
+                // Handle non-JSON error responses
+                const errorText = await response.text();
+                throw new Error(errorText || `HTTP error! status: ${response.status}`);
+            }
         }
         
-        return await response.json();
+        // Parse successful responses
+        if (isJson) {
+            return await response.json();
+        } else {
+            // Handle non-JSON successful responses
+            const text = await response.text();
+            throw new Error(`Expected JSON response, got: ${text.substring(0, 100)}`);
+        }
     } catch (error) {
         console.error('API call failed:', error);
         throw error;

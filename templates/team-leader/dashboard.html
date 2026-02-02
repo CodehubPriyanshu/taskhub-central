@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Team Leader Dashboard - TaskHub Central</title>
+    <link rel="stylesheet" href="../css/common.css">
+    <link rel="stylesheet" href="../css/team-leader.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f7fa;
+        }
+        
+        .dashboard-container {
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        .sidebar {
+            width: 250px;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 20px 0;
+            box-shadow: 3px 0 10px rgba(0,0,0,0.1);
+        }
+        
+        .sidebar-header {
+            padding: 0 20px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            margin-bottom: 20px;
+        }
+        
+        .sidebar-header h2 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        
+        .sidebar-nav {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .sidebar-nav li {
+            margin: 0;
+        }
+        
+        .sidebar-nav a {
+            display: block;
+            padding: 15px 20px;
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+        
+        .sidebar-nav a:hover, .sidebar-nav a.active {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-left-color: white;
+        }
+        
+        .main-content {
+            flex: 1;
+            padding: 20px;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e1e8ed;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #4facfe;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .logout-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        
+        .logout-btn:hover {
+            background: #c0392b;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stat-card h3 {
+            margin: 0 0 10px 0;
+            color: #7f8c8d;
+            font-size: 16px;
+            font-weight: 500;
+        }
+        
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin: 0;
+        }
+        
+        .content-section {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .section-header h2 {
+            margin: 0;
+            color: #2c3e50;
+            font-size: 24px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: #4facfe;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #3a9bef;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e1e8ed;
+        }
+        
+        th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .priority-high { color: #e74c3c; }
+        .priority-medium { color: #f39c12; }
+        .priority-low { color: #27ae60; }
+        
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .status-pending { background: #fff3cd; color: #856404; }
+        .status-in-progress { background: #cce5ff; color: #004085; }
+        .status-completed { background: #d4edda; color: #155724; }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>Team Leader</h2>
+            </div>
+            <ul class="sidebar-nav">
+                <li><a href="#" class="active" data-section="overview">Overview</a></li>
+                <li><a href="#" data-section="my-tasks">My Tasks</a></li>
+                <li><a href="#" data-section="team-tasks">Team Tasks</a></li>
+                <li><a href="#" data-section="team-members">Team Members</a></li>
+            </ul>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Header -->
+            <div class="header">
+                <h1>Team Leader Dashboard</h1>
+                <div class="user-info">
+                    <div class="user-avatar" id="userInitial">TL</div>
+                    <div>
+                        <div id="userName">Team Leader</div>
+                        <div id="userRole">Team Leader</div>
+                    </div>
+                    <button class="logout-btn" id="logoutBtn">Logout</button>
+                </div>
+            </div>
+            
+            <!-- Overview Section -->
+            <div id="overview-section" class="content-section">
+                <div class="section-header">
+                    <h2>Team Overview</h2>
+                    <button class="btn btn-primary" id="createTaskBtn">Create New Task</button>
+                </div>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>Team Members</h3>
+                        <p class="stat-value" id="teamMembersCount">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Pending Tasks</h3>
+                        <p class="stat-value" id="pendingTasksCount">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>In Progress</h3>
+                        <p class="stat-value" id="inProgressTasksCount">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Completed</h3>
+                        <p class="stat-value" id="completedTasksCount">0</p>
+                    </div>
+                </div>
+                
+                <h3>Recent Team Activity</h3>
+                <div id="recentActivity">
+                    <p>No recent activity</p>
+                </div>
+            </div>
+            
+            <!-- My Tasks Section -->
+            <div id="my-tasks-section" class="content-section" style="display: none;">
+                <div class="section-header">
+                    <h2>My Assigned Tasks</h2>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Description</th>
+                            <th>Due Date</th>
+                            <th>Priority</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="myTasksTableBody">
+                        <!-- Tasks will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Team Tasks Section -->
+            <div id="team-tasks-section" class="content-section" style="display: none;">
+                <div class="section-header">
+                    <h2>Team Tasks</h2>
+                    <button class="btn btn-primary" id="assignTaskBtn">Assign New Task</button>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Assigned To</th>
+                            <th>Due Date</th>
+                            <th>Priority</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="teamTasksTableBody">
+                        <!-- Team tasks will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Team Members Section -->
+            <div id="team-members-section" class="content-section" style="display: none;">
+                <div class="section-header">
+                    <h2>Team Members</h2>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Status</th>
+                            <th>Tasks Assigned</th>
+                        </tr>
+                    </thead>
+                    <tbody id="teamMembersTableBody">
+                        <!-- Team members will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script src="../js/auth.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check authentication
+            if (!authManager.getIsAuthenticated()) {
+                window.location.href = '../index.html';
+                return;
+            }
+            
+            // Check if user is team leader
+            const currentUser = authManager.getCurrentUser();
+            if (currentUser.role !== 'team_leader') {
+                window.location.href = '../index.html';
+                return;
+            }
+            
+            // Update user info
+            document.getElementById('userName').textContent = currentUser.name || 'Team Leader';
+            document.getElementById('userRole').textContent = 'Team Leader';
+            document.getElementById('userInitial').textContent = 'TL';
+            
+            // Set up sidebar navigation
+            document.querySelectorAll('.sidebar-nav a').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // Remove active class from all links
+                    document.querySelectorAll('.sidebar-nav a').forEach(a => a.classList.remove('active'));
+                    // Add active class to clicked link
+                    this.classList.add('active');
+                    
+                    // Hide all sections
+                    document.querySelectorAll('.content-section').forEach(section => {
+                        section.style.display = 'none';
+                    });
+                    
+                    // Show selected section
+                    const sectionId = this.dataset.section + '-section';
+                    document.getElementById(sectionId).style.display = 'block';
+                    
+                    // Load data for the section
+                    loadSectionData(this.dataset.section);
+                });
+            });
+            
+            // Logout button
+            document.getElementById('logoutBtn').addEventListener('click', function() {
+                authManager.logout();
+            });
+            
+            // Load initial overview data
+            loadOverviewData();
+        });
+        
+        async function loadOverviewData() {
+            try {
+                // In a real implementation, you'd fetch team data
+                document.getElementById('teamMembersCount').textContent = '2';
+                document.getElementById('pendingTasksCount').textContent = '3';
+                document.getElementById('inProgressTasksCount').textContent = '1';
+                document.getElementById('completedTasksCount').textContent = '5';
+                
+            } catch (error) {
+                console.error('Error loading overview data:', error);
+            }
+        }
+        
+        async function loadSectionData(section) {
+            switch(section) {
+                case 'my-tasks':
+                    loadMyTasks();
+                    break;
+                case 'team-tasks':
+                    loadTeamTasks();
+                    break;
+                case 'team-members':
+                    loadTeamMembers();
+                    break;
+            }
+        }
+        
+        async function loadMyTasks() {
+            try {
+                const currentUserId = authManager.getUserId();
+                const response = await api.tasks.getAll({ assigned_to: currentUserId });
+                const tasks = response.data || [];
+                const tbody = document.getElementById('myTasksTableBody');
+                
+                tbody.innerHTML = tasks.map(task => `
+                    <tr>
+                        <td>${task.title}</td>
+                        <td>${task.description || 'No description'}</td>
+                        <td>${new Date(task.due_date).toLocaleDateString()}</td>
+                        <td class="priority-${task.priority}">${task.priority}</td>
+                        <td><span class="status-badge status-${task.status}">${task.status.replace('_', ' ')}</span></td>
+                        <td>
+                            <button class="btn btn-primary" onclick="viewTask(${task.id})">View</button>
+                        </td>
+                    </tr>
+                `).join('');
+                
+            } catch (error) {
+                console.error('Error loading my tasks:', error);
+                document.getElementById('myTasksTableBody').innerHTML = '<tr><td colspan="6">Error loading tasks</td></tr>';
+            }
+        }
+        
+        async function loadTeamTasks() {
+            try {
+                // This would fetch tasks for the team led by current user
+                const response = await api.tasks.getAll();
+                const tasks = response.data || [];
+                const tbody = document.getElementById('teamTasksTableBody');
+                
+                tbody.innerHTML = tasks.map(task => `
+                    <tr>
+                        <td>${task.title}</td>
+                        <td>${task.assigned_to_name || 'Unassigned'}</td>
+                        <td>${new Date(task.due_date).toLocaleDateString()}</td>
+                        <td class="priority-${task.priority}">${task.priority}</td>
+                        <td><span class="status-badge status-${task.status}">${task.status.replace('_', ' ')}</span></td>
+                        <td>
+                            <button class="btn btn-primary" onclick="viewTask(${task.id})">View</button>
+                            <button class="btn btn-primary" onclick="editTask(${task.id})">Edit</button>
+                        </td>
+                    </tr>
+                `).join('');
+                
+            } catch (error) {
+                console.error('Error loading team tasks:', error);
+                document.getElementById('teamTasksTableBody').innerHTML = '<tr><td colspan="6">Error loading team tasks</td></tr>';
+            }
+        }
+        
+        async function loadTeamMembers() {
+            try {
+                // This would fetch team members
+                const response = await api.users.getAll();
+                const users = response.data || [];
+                const tbody = document.getElementById('teamMembersTableBody');
+                
+                tbody.innerHTML = users.filter(user => user.role !== 'admin').map(user => `
+                    <tr>
+                        <td>${user.name || 'N/A'}</td>
+                        <td>${user.email}</td>
+                        <td>${user.role.replace('_', ' ')}</td>
+                        <td><span class="status-badge status-active">Active</span></td>
+                        <td>0</td>
+                    </tr>
+                `).join('');
+                
+            } catch (error) {
+                console.error('Error loading team members:', error);
+                document.getElementById('teamMembersTableBody').innerHTML = '<tr><td colspan="5">Error loading team members</td></tr>';
+            }
+        }
+        
+        // Placeholder functions
+        function viewTask(taskId) {
+            alert('View task functionality would be implemented here');
+        }
+        
+        function editTask(taskId) {
+            alert('Edit task functionality would be implemented here');
+        }
+    </script>
+</body>
+</html>

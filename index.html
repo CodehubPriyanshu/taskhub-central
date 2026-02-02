@@ -1,0 +1,1156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Career Mantra - Task Manager</title>
+    <link rel="stylesheet" href="css/common.css">
+    <link rel="stylesheet" href="css/admin.css">
+    <link rel="stylesheet" href="css/team-leader.css">
+    <link rel="stylesheet" href="css/user.css">
+    <style>
+        /* Login Page Styles */
+        #loginPage {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        
+        .login-container {
+            width: 100%;
+            max-width: 450px;
+            margin: 0 auto;
+        }
+        
+        .login-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .login-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+        }
+        
+        .login-header {
+            margin-bottom: 32px;
+        }
+        
+        .login-header h1 {
+            font-size: 32px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+        
+        .login-header p {
+            font-size: 16px;
+            color: #7f8c8d;
+            font-weight: 400;
+        }
+        
+        .login-form {
+            text-align: left;
+            margin-bottom: 24px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #2c3e50;
+            font-size: 14px;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e1e8ed;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .form-control::placeholder {
+            color: #95a5a6;
+        }
+        
+        .remember-me {
+            display: flex;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        
+        .remember-me input {
+            margin-right: 10px;
+            width: 18px;
+            height: 18px;
+            accent-color: #667eea;
+        }
+        
+        .remember-me label {
+            font-size: 14px;
+            color: #7f8c8d;
+            font-weight: 400;
+            margin: 0;
+        }
+        
+        .login-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 24px;
+        }
+        
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .login-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .demo-section {
+            border-top: 1px solid #eee;
+            padding-top: 24px;
+            margin-top: 20px;
+        }
+        
+        .demo-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+        
+        .demo-credentials {
+            display: grid;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .credential-card {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            padding: 16px;
+            text-align: left;
+        }
+        
+        .credential-role {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            font-size: 15px;
+        }
+        
+        .credential-info {
+            font-size: 13px;
+            color: #7f8c8d;
+            margin-bottom: 12px;
+            line-height: 1.4;
+        }
+        
+        .credential-info div {
+            margin-bottom: 4px;
+        }
+        
+        .demo-btn {
+            width: 100%;
+            padding: 10px;
+            background: white;
+            border: 1px solid #667eea;
+            border-radius: 8px;
+            color: #667eea;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .demo-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+        
+        .error-message {
+            background: #fee;
+            color: #c33;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-top: 16px;
+            border: 1px solid #fcc;
+        }
+        
+        .login-footer {
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            color: #7f8c8d;
+            font-size: 13px;
+        }
+        
+        /* Dashboard Container Styles */
+        .dashboard-container {
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        .sidebar {
+            width: 250px;
+            color: white;
+            padding: 20px 0;
+            box-shadow: 3px 0 10px rgba(0,0,0,0.1);
+        }
+        
+        .admin-sidebar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .leader-sidebar {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        
+        .user-sidebar {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        }
+        
+        .sidebar-header {
+            padding: 0 20px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            margin-bottom: 20px;
+        }
+        
+        .sidebar-header h2 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        
+        .sidebar-nav {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .sidebar-nav li {
+            margin: 0;
+        }
+        
+        .sidebar-nav a {
+            display: block;
+            padding: 15px 20px;
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+        
+        .sidebar-nav a:hover, .sidebar-nav a.active {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-left-color: white;
+        }
+        
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            background-color: #f5f7fa;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e1e8ed;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .admin-avatar { background: #667eea; }
+        .leader-avatar { background: #4facfe; }
+        .user-avatar-color { background: #43e97b; }
+        
+        .logout-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        
+        .logout-btn:hover {
+            background: #c0392b;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stat-card h3 {
+            margin: 0 0 10px 0;
+            color: #7f8c8d;
+            font-size: 16px;
+            font-weight: 500;
+        }
+        
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin: 0;
+        }
+        
+        .content-section {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .content-section.active {
+            display: block;
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .section-header h2 {
+            margin: 0;
+            color: #2c3e50;
+            font-size: 24px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            color: white;
+        }
+        
+        .admin-btn { background: #667eea; }
+        .admin-btn:hover { background: #5a6fd8; }
+        
+        .leader-btn { background: #4facfe; }
+        .leader-btn:hover { background: #3a9bef; }
+        
+        .user-btn { background: #43e97b; }
+        .user-btn:hover { background: #34d96c; }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e1e8ed;
+        }
+        
+        th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .priority-high { color: #e74c3c; }
+        .priority-medium { color: #f39c12; }
+        .priority-low { color: #27ae60; }
+        
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .status-pending { background: #fff3cd; color: #856404; }
+        .status-in-progress { background: #cce5ff; color: #004085; }
+        .status-completed { background: #d4edda; color: #155724; }
+        .status-active { background: #d4edda; color: #155724; }
+        .status-inactive { background: #f8d7da; color: #721c24; }
+        
+        /* Hide all pages by default */
+        #loginPage, #adminDashboard, #leaderDashboard, #userDashboard {
+            display: none;
+        }
+        
+        /* Show login page by default */
+        #loginPage.show {
+            display: flex;
+        }
+        
+        /* Show dashboard based on role */
+        #adminDashboard.show, #leaderDashboard.show, #userDashboard.show {
+            display: block;
+        }
+        
+        /* Responsive design */
+        @media (max-width: 480px) {
+            #loginPage {
+                padding: 15px;
+            }
+            
+            .login-card {
+                padding: 30px 20px;
+            }
+            
+            .login-header h1 {
+                font-size: 28px;
+            }
+            
+            .dashboard-container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Page -->
+    <div id="loginPage" class="show">
+        <div class="login-container">
+            <div class="login-card">
+                <div class="login-header">
+                    <h1>Career Mantra – Task Manager</h1>
+                    <p>Role-Based Task Management System</p>
+                </div>
+                
+                <form id="loginForm" class="login-form">
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" class="form-control" placeholder="Enter your email" autocomplete="username" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password" class="form-control" placeholder="Enter your password" autocomplete="current-password" required>
+                    </div>
+                    
+                    <div class="remember-me">
+                        <input type="checkbox" id="rememberMe" name="rememberMe">
+                        <label for="rememberMe">Remember me</label>
+                    </div>
+                    
+                    <button type="submit" class="login-btn">Login</button>
+                    
+                    <div id="loginError" class="error-message" style="display: none;"></div>
+                </form>
+                
+                <div class="demo-section">
+                    <h3 class="demo-title">Demo Access Credentials</h3>
+                    <div class="demo-credentials">
+                        <div class="credential-card">
+                            <div class="credential-role">Admin Access</div>
+                            <div class="credential-info">
+                                <div>Email: admin@taskhub.com</div>
+                                <div>Password: password</div>
+                            </div>
+                            <button type="button" class="demo-btn" data-email="admin@taskhub.com" data-password="password" data-role="admin">
+                                Login as Admin
+                            </button>
+                        </div>
+                        
+                        <div class="credential-card">
+                            <div class="credential-role">Team Leader Access</div>
+                            <div class="credential-info">
+                                <div>Email: leader@taskhub.com</div>
+                                <div>Password: password</div>
+                            </div>
+                            <button type="button" class="demo-btn" data-email="leader@taskhub.com" data-password="password" data-role="team_leader">
+                                Login as Team Leader
+                            </button>
+                        </div>
+                        
+                        <div class="credential-card">
+                            <div class="credential-role">User Access</div>
+                            <div class="credential-info">
+                                <div>Email: user@taskhub.com</div>
+                                <div>Password: password</div>
+                            </div>
+                            <button type="button" class="demo-btn" data-email="user@taskhub.com" data-password="password" data-role="user">
+                                Login as User
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="login-footer">
+                    <p>&copy; 2024 TaskFlow. All rights reserved.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Dashboard -->
+    <div id="adminDashboard">
+        <div class="dashboard-container">
+            <div class="sidebar admin-sidebar">
+                <div class="sidebar-header">
+                    <h2>Admin Panel</h2>
+                </div>
+                <ul class="sidebar-nav">
+                    <li><a href="#" class="active" data-section="overview">Overview</a></li>
+                    <li><a href="#" data-section="users">Users</a></li>
+                    <li><a href="#" data-section="teams">Teams</a></li>
+                    <li><a href="#" data-section="departments">Departments</a></li>
+                    <li><a href="#" data-section="reports">Reports</a></li>
+                </ul>
+            </div>
+            
+            <div class="main-content">
+                <div class="header">
+                    <h1>Admin Dashboard</h1>
+                    <div class="user-info">
+                        <div class="user-avatar admin-avatar" id="adminUserInitial">A</div>
+                        <div>
+                            <div id="adminUserName">Admin User</div>
+                            <div id="adminUserRole">Administrator</div>
+                        </div>
+                        <button class="logout-btn" id="adminLogoutBtn">Logout</button>
+                    </div>
+                </div>
+                
+                <div id="admin-overview-section" class="content-section active">
+                    <div class="section-header">
+                        <h2>System Overview</h2>
+                    </div>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <h3>Total Users</h3>
+                            <p class="stat-value" id="totalUsers">0</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Active Teams</h3>
+                            <p class="stat-value" id="totalTeams">0</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Departments</h3>
+                            <p class="stat-value" id="totalDepartments">0</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Pending Tasks</h3>
+                            <p class="stat-value" id="pendingTasks">0</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="admin-users-section" class="content-section">
+                    <div class="section-header">
+                        <h2>User Management</h2>
+                        <button class="btn btn-primary admin-btn" id="addUserBtn">Add New User</button>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody">
+                            <tr><td colspan="5">No users found</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div id="admin-teams-section" class="content-section">
+                    <div class="section-header">
+                        <h2>Team Management</h2>
+                        <button class="btn btn-primary admin-btn" id="addTeamBtn">Add New Team</button>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Team Name</th>
+                                <th>Department</th>
+                                <th>Leader</th>
+                                <th>Members</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="teamsTableBody">
+                            <tr><td colspan="5">No teams found</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div id="admin-departments-section" class="content-section">
+                    <div class="section-header">
+                        <h2>Department Management</h2>
+                        <button class="btn btn-primary admin-btn" id="addDeptBtn">Add New Department</button>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Department Name</th>
+                                <th>Created Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="deptsTableBody">
+                            <tr><td colspan="3">No departments found</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Team Leader Dashboard -->
+    <div id="leaderDashboard">
+        <div class="dashboard-container">
+            <div class="sidebar leader-sidebar">
+                <div class="sidebar-header">
+                    <h2>Team Leader</h2>
+                </div>
+                <ul class="sidebar-nav">
+                    <li><a href="#" class="active" data-section="overview">Overview</a></li>
+                    <li><a href="#" data-section="my-tasks">My Tasks</a></li>
+                    <li><a href="#" data-section="team-tasks">Team Tasks</a></li>
+                    <li><a href="#" data-section="team-members">Team Members</a></li>
+                </ul>
+            </div>
+            
+            <div class="main-content">
+                <div class="header">
+                    <h1>Team Leader Dashboard</h1>
+                    <div class="user-info">
+                        <div class="user-avatar leader-avatar" id="leaderUserInitial">TL</div>
+                        <div>
+                            <div id="leaderUserName">Team Leader</div>
+                            <div id="leaderUserRole">Team Leader</div>
+                        </div>
+                        <button class="logout-btn" id="leaderLogoutBtn">Logout</button>
+                    </div>
+                </div>
+                
+                <div id="leader-overview-section" class="content-section active">
+                    <div class="section-header">
+                        <h2>Team Overview</h2>
+                        <button class="btn btn-primary leader-btn" id="createTaskBtn">Create New Task</button>
+                    </div>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <h3>Team Members</h3>
+                            <p class="stat-value" id="teamMembersCount">0</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Pending Tasks</h3>
+                            <p class="stat-value" id="leaderPendingTasksCount">0</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>In Progress</h3>
+                            <p class="stat-value" id="inProgressTasksCount">0</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Completed</h3>
+                            <p class="stat-value" id="completedTasksCount">0</p>
+                        </div>
+                    </div>
+                    
+                    <h3>Recent Team Activity</h3>
+                    <div id="recentActivity">
+                        <p>No recent activity</p>
+                    </div>
+                </div>
+                
+                <div id="leader-my-tasks-section" class="content-section">
+                    <div class="section-header">
+                        <h2>My Assigned Tasks</h2>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Description</th>
+                                <th>Due Date</th>
+                                <th>Priority</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="myTasksTableBody">
+                            <tr><td colspan="6">No tasks found</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div id="leader-team-tasks-section" class="content-section">
+                    <div class="section-header">
+                        <h2>Team Tasks</h2>
+                        <button class="btn btn-primary leader-btn" id="assignTaskBtn">Assign New Task</button>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Assigned To</th>
+                                <th>Due Date</th>
+                                <th>Priority</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="teamTasksTableBody">
+                            <tr><td colspan="6">No team tasks found</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div id="leader-team-members-section" class="content-section">
+                    <div class="section-header">
+                        <h2>Team Members</h2>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Status</th>
+                                <th>Tasks Assigned</th>
+                            </tr>
+                        </thead>
+                        <tbody id="teamMembersTableBody">
+                            <tr><td colspan="5">No team members found</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Dashboard -->
+    <div id="userDashboard">
+        <div class="dashboard-container">
+            <div class="sidebar user-sidebar">
+                <div class="sidebar-header">
+                    <h2>User Panel</h2>
+                </div>
+                <ul class="sidebar-nav">
+                    <li><a href="#" class="active" data-section="overview">My Dashboard</a></li>
+                    <li><a href="#" data-section="assigned-tasks">Assigned Tasks</a></li>
+                    <li><a href="#" data-section="completed-tasks">Completed Tasks</a></li>
+                    <li><a href="#" data-section="profile">My Profile</a></li>
+                </ul>
+            </div>
+            
+            <div class="main-content">
+                <div class="header">
+                    <h1>User Dashboard</h1>
+                    <div class="user-info">
+                        <div class="user-avatar user-avatar-color" id="userUserInitial">U</div>
+                        <div>
+                            <div id="userUserName">User</div>
+                            <div id="userUserRole">Team Member</div>
+                        </div>
+                        <button class="logout-btn" id="userLogoutBtn">Logout</button>
+                    </div>
+                </div>
+                
+                <div id="user-overview-section" class="content-section active">
+                    <div class="section-header">
+                        <h2>My Task Summary</h2>
+                    </div>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <h3>Pending Tasks</h3>
+                            <p class="stat-value" id="userPendingTasksCount">0</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>In Progress</h3>
+                            <p class="stat-value" id="userInProgressTasksCount">0</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Completed</h3>
+                            <p class="stat-value" id="userCompletedTasksCount">0</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Overdue</h3>
+                            <p class="stat-value" id="overdueTasksCount">0</p>
+                        </div>
+                    </div>
+                    
+                    <h3>Upcoming Deadlines</h3>
+                    <div id="upcomingDeadlines">
+                        <p>No upcoming deadlines</p>
+                    </div>
+                </div>
+                
+                <div id="user-assigned-tasks-section" class="content-section">
+                    <div class="section-header">
+                        <h2>My Assigned Tasks</h2>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Description</th>
+                                <th>Due Date</th>
+                                <th>Priority</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="assignedTasksTableBody">
+                            <tr><td colspan="6">No tasks found</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div id="user-completed-tasks-section" class="content-section">
+                    <div class="section-header">
+                        <h2>Completed Tasks</h2>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Completed Date</th>
+                                <th>Priority</th>
+                                <th>Feedback</th>
+                            </tr>
+                        </thead>
+                        <tbody id="completedTasksTableBody">
+                            <tr><td colspan="4">No completed tasks found</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div id="user-profile-section" class="content-section">
+                    <div class="section-header">
+                        <h2>My Profile</h2>
+                    </div>
+                    <div id="profileContent">
+                        <div class="profile-details">
+                            <h3>Personal Information</h3>
+                            <p><strong>Name:</strong> <span id="profileName">-</span></p>
+                            <p><strong>Email:</strong> <span id="profileEmail">-</span></p>
+                            <p><strong>Role:</strong> <span id="profileRole">-</span></p>
+                            <p><strong>Team:</strong> <span id="profileTeam">-</span></p>
+                            <p><strong>Department:</strong> <span id="profileDepartment">-</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const loginForm = document.getElementById('loginForm');
+            const loginError = document.getElementById('loginError');
+            const demoButtons = document.querySelectorAll('.demo-btn');
+            
+            // Check if already logged in
+            if (authManager.getIsAuthenticated()) {
+                showDashboardByRole(authManager.getUserRole());
+                return;
+            }
+            
+            // Handle demo button clicks
+            demoButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const email = this.dataset.email;
+                    const password = this.dataset.password;
+                    
+                    // Auto-fill the form
+                    document.getElementById('email').value = email;
+                    document.getElementById('password').value = password;
+                    
+                    // Scroll to form and focus
+                    document.getElementById('email').scrollIntoView({ behavior: 'smooth' });
+                    document.getElementById('password').focus();
+                });
+            });
+            
+            loginForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                const rememberMe = document.getElementById('rememberMe').checked;
+                
+                // Clear previous errors
+                loginError.style.display = 'none';
+                loginError.textContent = '';
+                
+                // Basic validation
+                if (!email || !password) {
+                    showError('Please enter both email and password');
+                    return;
+                }
+                
+                // Disable submit button during login
+                const submitBtn = loginForm.querySelector('button[type="submit"]');
+                const originalText = submitBtn.textContent;
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Logging in...';
+                
+                try {
+                    const result = await authManager.login(email, password, rememberMe);
+                    
+                    if (result.success) {
+                        // Show dashboard based on role
+                        showDashboardByRole(result.role);
+                    } else {
+                        showError(result.error || 'Login failed');
+                    }
+                } catch (error) {
+                    console.error('Login error:', error);
+                    showError('An unexpected error occurred. Please try again.');
+                } finally {
+                    // Re-enable submit button
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = originalText;
+                }
+            });
+            
+            function showError(message) {
+                loginError.textContent = message;
+                loginError.style.display = 'block';
+                loginError.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+            
+            // Set up dashboard navigation
+            setupDashboardNavigation();
+            
+            // Set up logout buttons
+            setupLogoutButtons();
+        });
+        
+        function showDashboardByRole(role) {
+            // Hide login page
+            document.getElementById('loginPage').classList.remove('show');
+            
+            // Show appropriate dashboard
+            switch(role) {
+                case 'admin':
+                    document.getElementById('adminDashboard').classList.add('show');
+                    loadAdminData();
+                    break;
+                case 'team_leader':
+                    document.getElementById('leaderDashboard').classList.add('show');
+                    loadLeaderData();
+                    break;
+                case 'user':
+                    document.getElementById('userDashboard').classList.add('show');
+                    loadUserData();
+                    break;
+                default:
+                    // If role is invalid, show login page
+                    document.getElementById('loginPage').classList.add('show');
+                    authManager.logout();
+            }
+        }
+        
+        function setupDashboardNavigation() {
+            // Admin navigation
+            document.querySelectorAll('#adminDashboard .sidebar-nav a').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    handleNavigation(this, 'admin');
+                });
+            });
+            
+            // Leader navigation
+            document.querySelectorAll('#leaderDashboard .sidebar-nav a').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    handleNavigation(this, 'leader');
+                });
+            });
+            
+            // User navigation
+            document.querySelectorAll('#userDashboard .sidebar-nav a').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    handleNavigation(this, 'user');
+                });
+            });
+        }
+        
+        function handleNavigation(clickedLink, role) {
+            const prefix = role === 'admin' ? 'admin' : role === 'leader' ? 'leader' : 'user';
+            
+            // Remove active class from all links
+            document.querySelectorAll(`#${prefix}Dashboard .sidebar-nav a`).forEach(a => a.classList.remove('active'));
+            // Add active class to clicked link
+            clickedLink.classList.add('active');
+            
+            // Hide all sections
+            document.querySelectorAll(`#${prefix}Dashboard .content-section`).forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Show selected section
+            const sectionId = `${prefix}-${clickedLink.dataset.section}-section`;
+            document.getElementById(sectionId).classList.add('active');
+        }
+        
+        function setupLogoutButtons() {
+            document.getElementById('adminLogoutBtn').addEventListener('click', function() {
+                authManager.logout();
+                document.getElementById('adminDashboard').classList.remove('show');
+                document.getElementById('loginPage').classList.add('show');
+            });
+            
+            document.getElementById('leaderLogoutBtn').addEventListener('click', function() {
+                authManager.logout();
+                document.getElementById('leaderDashboard').classList.remove('show');
+                document.getElementById('loginPage').classList.add('show');
+            });
+            
+            document.getElementById('userLogoutBtn').addEventListener('click', function() {
+                authManager.logout();
+                document.getElementById('userDashboard').classList.remove('show');
+                document.getElementById('loginPage').classList.add('show');
+            });
+        }
+        
+        // Placeholder data loading functions
+        function loadAdminData() {
+            const currentUser = authManager.getCurrentUser();
+            document.getElementById('adminUserName').textContent = currentUser.name || 'Admin User';
+            document.getElementById('adminUserRole').textContent = 'Administrator';
+            document.getElementById('adminUserInitial').textContent = (currentUser.name || 'A').charAt(0).toUpperCase();
+            
+            // Load stats (placeholder data)
+            document.getElementById('totalUsers').textContent = '5';
+            document.getElementById('totalTeams').textContent = '3';
+            document.getElementById('totalDepartments').textContent = '2';
+            document.getElementById('pendingTasks').textContent = '12';
+        }
+        
+        function loadLeaderData() {
+            const currentUser = authManager.getCurrentUser();
+            document.getElementById('leaderUserName').textContent = currentUser.name || 'Team Leader';
+            document.getElementById('leaderUserRole').textContent = 'Team Leader';
+            document.getElementById('leaderUserInitial').textContent = 'TL';
+            
+            // Load stats (placeholder data)
+            document.getElementById('teamMembersCount').textContent = '8';
+            document.getElementById('leaderPendingTasksCount').textContent = '5';
+            document.getElementById('inProgressTasksCount').textContent = '3';
+            document.getElementById('completedTasksCount').textContent = '15';
+        }
+        
+        function loadUserData() {
+            const currentUser = authManager.getCurrentUser();
+            document.getElementById('userUserName').textContent = currentUser.name || 'User';
+            document.getElementById('userUserRole').textContent = 'Team Member';
+            document.getElementById('userUserInitial').textContent = (currentUser.name || 'U').charAt(0).toUpperCase();
+            
+            // Load profile data
+            document.getElementById('profileName').textContent = currentUser.name || 'N/A';
+            document.getElementById('profileEmail').textContent = currentUser.email || 'N/A';
+            document.getElementById('profileRole').textContent = currentUser.role.replace('_', ' ') || 'N/A';
+            document.getElementById('profileTeam').textContent = currentUser.teamId ? `Team ${currentUser.teamId}` : 'N/A';
+            document.getElementById('profileDepartment').textContent = 'Engineering';
+            
+            // Load stats (placeholder data)
+            document.getElementById('userPendingTasksCount').textContent = '3';
+            document.getElementById('userInProgressTasksCount').textContent = '2';
+            document.getElementById('userCompletedTasksCount').textContent = '8';
+            document.getElementById('overdueTasksCount').textContent = '1';
+        }
+    </script>
+</body>
+</html>
