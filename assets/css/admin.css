@@ -1,0 +1,78 @@
+/* Admin-specific CSS */
+.sidebar {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.admin-avatar { 
+    background: #667eea; 
+}
+
+.btn-primary.admin-btn { 
+    background: #667eea; 
+}
+
+.btn-primary.admin-btn:hover { 
+    background: #5a6fd8; 
+}
+
+.user-management-section {
+    margin-top: 30px;
+}
+
+.team-management-section {
+    margin-top: 30px;
+}
+
+.task-management-section {
+    margin-top: 30px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+.form-control {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+    box-sizing: border-box;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+}
+
+.form-actions {
+    margin-top: 25px;
+    text-align: right;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-size: 14px;
+    color: #2c3e50;
+}
+
+.checkbox-label input[type="checkbox"] {
+    margin-right: 10px;
+    width: 18px;
+    height: 18px;
+    accent-color: #667eea;
+}
+
+.checkmark {
+    margin-left: 5px;
+}

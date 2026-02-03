@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../config.php';
+require_once __DIR__ . '/../config/config.php';
 
 header('Content-Type: application/json');
 
@@ -9,14 +9,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 // Get the request path and method
-// Handle both PATH_INFO and direct routing
+// Handle routing for PHP built-in server
 $path_info = $_SERVER['PATH_INFO'] ?? '';
 
-// If PATH_INFO is not set, try to extract from REQUEST_URI
+// If PATH_INFO is not set, extract from REQUEST_URI for built-in server
 if (empty($path_info) && isset($_SERVER['REQUEST_URI'])) {
     $request_uri = $_SERVER['REQUEST_URI'];
-    // Extract path after /auth.php
-    if (preg_match('@/auth\.php(/.*)?$@', $request_uri, $matches)) {
+    // For built-in server, the route file is called directly
+    // Extract path after /api/auth
+    if (preg_match('@/api/auth(/.*)?$@', $request_uri, $matches)) {
+        $path_info = $matches[1] ?? '/';
+    }
+    // Also handle direct access to auth.php
+    elseif (preg_match('@/auth\.php(/.*)?$@', $request_uri, $matches)) {
         $path_info = $matches[1] ?? '/';
     }
 }
@@ -47,6 +52,8 @@ switch ($path) {
     case '/verify':
         if ($method === 'POST') {
             handleVerifyToken();
+        } else if ($method === 'GET') {
+            handleSessionVerify();
         } else {
             http_response_code(405);
             echo json_encode(['message' => 'Method not allowed']);
@@ -98,6 +105,11 @@ switch ($path) {
 function handleLogin() {
     global $pdo;
     
+    // Get the request path and method from global scope
+    $path = $_SERVER['PATH_INFO'] ?? '';
+    $path = $path ?: '/';
+    $method = $_SERVER['REQUEST_METHOD'];
+    
     $input = json_decode(file_get_contents('php://input'), true);
     $email = trim($input['email'] ?? '');
     $password = $input['password'] ?? '';
@@ -148,11 +160,38 @@ function handleLogin() {
             'exp' => time() + (24 * 60 * 60) // 24 hours
         ]));
         
-        // Store token in session for simplicity
+        // Store token and user info in session
         $_SESSION['auth_token'] = $token;
         $_SESSION['user_id'] = $user['id'];
+        $_SESSION['user_email'] = $user['email'];
+        $_SESSION['user_name'] = $user['name'] ?? '';
         $_SESSION['user_role'] = $user['role'];
+        $_SESSION['role'] = $user['role'];
+
+        // Server-side redirect for all login requests
+        $role_paths = [
+            'admin' => '/admin/dashboard',
+            'team_leader' => '/team-leader/dashboard',
+            'user' => '/user/dashboard'
+        ];
+        $redirect_path = $role_paths[$user['role']] ?? '/user/dashboard';
         
+        // Check if this is a direct login request (not token verification)
+        if ($path === '/login' && $method === 'POST') {
+            // Return a small HTML page that redirects to the dashboard
+            header('Content-Type: text/html');
+            echo '<!DOCTYPE html>
+';
+            echo '<html><head>
+';
+            echo '<meta http-equiv="refresh" content="0;url=' . htmlspecialchars($redirect_path, ENT_QUOTES, 'UTF-8') . '">
+';
+            echo '<script>window.location.href = \'' . addslashes($redirect_path) . '\';</script>
+';
+            echo '</head><body>Redirecting...</body></html>';
+            exit();
+        }
+                
         echo json_encode([
             'success' => true,
             'access_token' => $token,
@@ -294,6 +333,37 @@ function handleVerifyToken() {
         error_log("Token verification error: " . $e->getMessage());
         http_response_code(500);
         echo json_encode(['message' => 'Server error during token verification']);
+    }
+}
+
+/**
+ * Handle session verification for frontend authentication check
+ * This is called via GET request to check if user is logged in
+ */
+function handleSessionVerify() {
+    // Start session if not already started
+    if (session_status() == PHP_SESSION_NONE) {
+        session_start();
+    }
+    
+    // Check if user is authenticated
+    if (isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
+        // User is authenticated
+        echo json_encode([
+            'authenticated' => true,
+            'role' => $_SESSION['role'],
+            'user' => [
+                'id' => $_SESSION['user_id'],
+                'name' => $_SESSION['user_name'] ?? '',
+                'email' => $_SESSION['user_email'] ?? '',
+                'role' => $_SESSION['role']
+            ]
+        ]);
+    } else {
+        // User is not authenticated
+        echo json_encode([
+            'authenticated' => false
+        ]);
     }
 }
 

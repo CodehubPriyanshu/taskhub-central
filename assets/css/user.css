@@ -1,0 +1,85 @@
+/* User-specific CSS */
+.sidebar {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+}
+
+.user-avatar-color { 
+    background: #43e97b; 
+}
+
+.btn-primary.user-btn { 
+    background: #43e97b; 
+}
+
+.btn-primary.user-btn:hover { 
+    background: #34d96c; 
+}
+
+.my-tasks-section {
+    margin-top: 30px;
+}
+
+.completed-tasks-section {
+    margin-top: 30px;
+}
+
+.my-profile-section {
+    margin-top: 30px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+.form-control {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+    box-sizing: border-box;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #43e97b;
+    box-shadow: 0 0 0 2px rgba(67, 233, 123, 0.2);
+}
+
+.form-actions {
+    margin-top: 25px;
+    text-align: right;
+}
+
+.submission-box {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+.upload-area {
+    border: 2px dashed #dee2e6;
+    border-radius: 8px;
+    padding: 30px;
+    text-align: center;
+    margin: 15px 0;
+    transition: border-color 0.3s ease;
+}
+
+.upload-area:hover {
+    border-color: #43e97b;
+}
+
+.upload-area.drag-over {
+    border-color: #43e97b;
+    background-color: rgba(67, 233, 123, 0.05);
+}

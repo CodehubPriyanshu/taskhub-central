@@ -1,0 +1,55 @@
+/* Team Leader-specific CSS */
+.sidebar {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.leader-avatar { 
+    background: #4facfe; 
+}
+
+.btn-primary.leader-btn { 
+    background: #4facfe; 
+}
+
+.btn-primary.leader-btn:hover { 
+    background: #3a9bef; 
+}
+
+.task-assignment-section {
+    margin-top: 30px;
+}
+
+.user-task-management-section {
+    margin-top: 30px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+.form-control {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+    box-sizing: border-box;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #4facfe;
+    box-shadow: 0 0 0 2px rgba(79, 172, 254, 0.2);
+}
+
+.form-actions {
+    margin-top: 25px;
+    text-align: right;
+}

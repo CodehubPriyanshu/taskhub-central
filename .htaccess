@@ -1,11 +1,22 @@
 # Enable URL rewriting
 RewriteEngine On
 
-# Allow access to PHP files directly
+# Handle API routes - forward to index.php which will route to individual route files
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^cm-tm/api/(.*)$ index.php [L,QSA]
 
-# Route API requests to appropriate PHP files
+# Handle UI routes - forward to index.php for template rendering
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^cm-tm/(.*)$ index.php [L,QSA]
+
+# Allow direct access to static files (CSS, JS, images, etc.)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.+\.(css|js|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot))$ - [L]
+
+# Route API requests to appropriate PHP files (legacy support)
 # This allows URLs like /routes/auth.php/login to work properly
 RewriteRule ^routes/([^/]+)\.php/(.*)$ routes/$1.php [L,QSA]
 
